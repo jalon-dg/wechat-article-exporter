@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import JSZip from 'jszip';
 import mime from 'mime';
 import TurndownService from 'turndown';
 import { filterInvalidFilenameChars, sleep } from '#shared/utils/helpers';
@@ -16,7 +17,7 @@ import { type ExcelExportEntity, export2ExcelFile, export2JsonFile } from '~/uti
 import type { DownloadOptions } from './types';
 
 // 导出类型
-type ExportType = 'excel' | 'json' | 'html' | 'txt' | 'markdown' | 'word' | 'pdf';
+type ExportType = 'excel' | 'json' | 'html' | 'txt' | 'markdown' | 'word' | 'pdf' | 'epub';
 
 const preferences: Ref<Preferences> = usePreferences() as unknown as Ref<Preferences>;
 
@@ -39,7 +40,7 @@ export class Exporter extends BaseDownloader {
       throw new Error('导出任务正在运行中，无需重复启动');
     }
 
-    if (['html', 'txt', 'markdown', 'word', 'pdf'].includes(type)) {
+    if (['html', 'txt', 'markdown', 'word', 'pdf', 'epub'].includes(type)) {
       // 这些类型需要实时写入文件系统，提前初始化导出目录句柄
       try {
         await this.acquireExportDirectoryHandle();
@@ -77,6 +78,8 @@ export class Exporter extends BaseDownloader {
         await this.exportWordFiles();
       } else if (this.exportType === 'markdown') {
         await this.exportMarkdownFiles();
+      } else if (this.exportType === 'epub') {
+        await this.exportEpubFiles();
       } else if (this.exportType === 'pdf') {
         await this.exportPdfFiles();
       }
@@ -415,6 +418,243 @@ export class Exporter extends BaseDownloader {
 
   // 导出 pdf 文件
   private async exportPdfFiles() {}
+
+  // 导出电子书（EPUB）：用 Markdown 生成正文，每篇文章为一章，按发布时间倒序（最新在前），不含图片
+  private async exportEpubFiles() {
+    const parser = new DOMParser();
+    const turndownService = new TurndownService();
+
+    // 1. 按文章发布时间倒序（从晚到早）排序
+    const articlesWithUrl: { url: string; article: Awaited<ReturnType<typeof getArticleByLink>> }[] = [];
+    for (const url of this.urls) {
+      try {
+        const article = await getArticleByLink(url);
+        articlesWithUrl.push({ url, article });
+      } catch {
+        console.warn(`文章 ${url} 不存在，跳过`);
+      }
+    }
+    articlesWithUrl.sort((a, b) => b.article.update_time - a.article.update_time);
+
+    const total = articlesWithUrl.length;
+    if (total === 0) {
+      throw new Error('没有可导出的文章');
+    }
+    this.emit('export:total', total);
+
+    const zip = new JSZip();
+    zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+
+    const oebps = zip.folder('OEBPS')!;
+    const textFolder = oebps.folder('Text')!;
+
+    const manifestItems: string[] = [];
+    const spineItems: string[] = [];
+    const chapterTitles: string[] = [];
+    let bookTitle = '微信公众号文章合集';
+    const firstAccount = this.allAccountInfo.find(a => a.fakeid === articlesWithUrl[0]!.article.fakeid);
+    if (firstAccount?.nickname) {
+      bookTitle = `${firstAccount.nickname} 文章合集`;
+    }
+    bookTitle = bookTitle.replace(/[<>"&]/g, c => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' })[c]!);
+
+    // 生成一张带有电子书名称的大字 SVG 作为封面
+    const imagesFolder = oebps.folder('Images')!;
+    const coverSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+        fill="#ffffff"
+        font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif"
+        font-size="96" xml:space="preserve">
+    ${bookTitle}
+  </text>
+</svg>`;
+    imagesFolder.file('cover.svg', coverSvg, { compression: 'DEFLATE' });
+
+    const escapeXml = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+
+    // 将一行 Markdown 文本里的 **加粗** 转成 <strong> 标签，其余内容正常转义
+    const inlineMarkdownToHtml = (text: string): string => {
+      const strongReg = /\*\*([^*]+)\*\*/g;
+      let lastIndex = 0;
+      let result = '';
+      let match: RegExpExecArray | null;
+
+      while ((match = strongReg.exec(text)) !== null) {
+        // 普通文本
+        if (match.index > lastIndex) {
+          result += escapeXml(text.slice(lastIndex, match.index));
+        }
+        // 加粗文本
+        const boldInner = match[1] ?? '';
+        result += `<strong>${escapeXml(boldInner)}</strong>`;
+        lastIndex = match.index + match[0].length;
+      }
+
+      // 剩余尾部文本
+      if (lastIndex < text.length) {
+        result += escapeXml(text.slice(lastIndex));
+      }
+
+      return result;
+    };
+
+    const markdownToSimpleHtml = (md: string): string => {
+      const lines = md.split('\n');
+      const htmlLines: string[] = [];
+      let buffer: string[] = [];
+
+      const flushParagraph = () => {
+        if (!buffer.length) return;
+        const text = buffer.join(' ').trim();
+        if (text) {
+          htmlLines.push(`<p>${inlineMarkdownToHtml(text)}</p>`);
+        }
+        buffer = [];
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+        if (!line.trim()) {
+          flushParagraph();
+          continue;
+        }
+
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headingMatch) {
+          flushParagraph();
+          const level = Math.min(6, headingMatch[1].length);
+          const text = headingMatch[2].trim();
+          if (text) {
+            htmlLines.push(`<h${level}>${inlineMarkdownToHtml(text)}</h${level}>`);
+          }
+          continue;
+        }
+
+        buffer.push(line);
+      }
+
+      flushParagraph();
+      return htmlLines.join('\n');
+    };
+
+    for (let i = 0; i < articlesWithUrl.length; i++) {
+      const { url, article } = articlesWithUrl[i]!;
+      const chapterId = `chapter_${String(i + 1).padStart(3, '0')}`;
+      const xhtmlPath = `Text/${chapterId}.xhtml`;
+
+      // 获取正文 HTML，用 Turndown 转为 Markdown，再用简单规则转为结构清爽的 HTML，并删除图片
+      let htmlContent = await this.getPureContent(url, 'html', parser);
+      let markdown = '';
+      if (htmlContent) {
+        markdown = turndownService.turndown(htmlContent);
+        // 删除所有图片：![alt](url) 或 ![alt](url "title")
+        markdown = markdown.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\n{3,}/g, '\n\n').trim();
+      }
+      if (!markdown) {
+        markdown = '（该文章内容无法导出）';
+      }
+      const contentHtml = markdownToSimpleHtml(markdown);
+
+      const title = (article.title || '无标题').replace(/[<>"&]/g, c =>
+        ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' })[c]!
+      );
+      chapterTitles.push(title);
+      const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${title}</title>
+  <style type="text/css">
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; max-width: 100%; padding: 1em; line-height: 1.6; word-break: break-word; }
+    p { margin: 0.5em 0; }
+    h1, h2, h3, h4 { margin: 1em 0 0.5em; }
+    .meta { color: #666; font-size: 0.9em; }
+    .content { font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <p class="meta">${dayjs.unix(article.update_time).format('YYYY-MM-DD HH:mm')}</p>
+  <div class="content">
+${contentHtml}
+  </div>
+</body>
+</html>`;
+      textFolder.file(`${chapterId}.xhtml`, xhtml, { compression: 'DEFLATE' });
+
+      manifestItems.push(`    <item id="${chapterId}" href="${xhtmlPath}" media-type="application/xhtml+xml"/>`);
+      spineItems.push(`    <itemref idref="${chapterId}"/>`);
+      this.emit('export:progress', i + 1);
+    }
+
+    const navXhtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${bookTitle}</title>
+</head>
+<body>
+  <nav epub:type="toc" id="toc">
+    <h1>目录</h1>
+    <ol>
+${chapterTitles
+  .map(
+    (t, index) =>
+      `      <li><a href="Text/chapter_${String(index + 1).padStart(3, '0')}.xhtml">${t}</a></li>`
+  )
+  .join('\n')}
+    </ol>
+  </nav>
+</body>
+</html>`;
+    oebps.file('nav.xhtml', navXhtml, { compression: 'DEFLATE' });
+
+    const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>${bookTitle}</dc:title>
+    <dc:language>zh-CN</dc:language>
+    <dc:identifier id="uid">wechat-export-${Date.now()}</dc:identifier>
+    <meta name="cover" content="cover-image"/>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="cover-image" href="Images/cover.svg" media-type="image/svg+xml" properties="cover-image"/>
+    ${manifestItems.join('\n')}
+  </manifest>
+  <spine>
+    ${spineItems.join('\n')}
+  </spine>
+</package>`;
+    oebps.file('content.opf', contentOpf, { compression: 'DEFLATE' });
+
+    zip.file(
+      'META-INF/container.xml',
+      `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`,
+      { compression: 'DEFLATE' }
+    );
+
+    const epubBlob = await zip.generateAsync({ type: 'blob' });
+    const safeTitle = (firstAccount?.nickname || '微信公众号文章').replace(/[/\\:*?"<>|]/g, '_').slice(0, 100);
+    await this.writeFile(`${safeTitle}.epub`, epubBlob);
+    await sleep(100);
+  }
 
   private async getPureContent(url: string, format: 'html' | 'text', parser: DOMParser): Promise<string> {
     const cached = await getHtmlCache(url);

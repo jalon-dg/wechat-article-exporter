@@ -240,7 +240,42 @@ export default () => {
   // 导出 pdf
   async function export2pdf(urls: string[]) {}
 
-  function exportFile(type: 'excel' | 'json' | 'html' | 'text' | 'markdown' | 'word' | 'pdf', urls: string[]) {
+  // 导出电子书（EPUB）：用 Markdown 生成正文，每篇文章为一章按时间正序，不含图片
+  async function export2epub(urls: string[]) {
+    if (urls.length === 0) {
+      toast.warning('提示', '请先选择文章');
+      return;
+    }
+
+    const manager = new Exporter(urls);
+    manager.on('export:begin', () => {
+      phase.value = '电子书生成中';
+      completed_count.value = 0;
+      total_count.value = 0;
+    });
+    manager.on('export:total', (total: number) => {
+      total_count.value = total;
+    });
+    manager.on('export:progress', (index: number) => {
+      completed_count.value = index;
+    });
+    manager.on('export:finish', (seconds: number) => {
+      console.debug('耗时:', formatElapsedTime(seconds));
+      toast.success('电子书导出完成', `本次导出耗时 ${formatElapsedTime(seconds)}`);
+    });
+
+    try {
+      loading.value = true;
+      await manager.startExport('epub');
+    } catch (error) {
+      console.error('导出任务失败:', error);
+      alert((error as Error).message);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function exportFile(type: 'excel' | 'json' | 'html' | 'text' | 'markdown' | 'word' | 'pdf' | 'epub', urls: string[]) {
     switch (type) {
       case 'excel':
         return export2excel(urls);
@@ -254,6 +289,8 @@ export default () => {
         return export2markdown(urls);
       case 'word':
         return export2word(urls);
+      case 'epub':
+        return export2epub(urls);
       case 'pdf':
         return export2pdf(urls);
     }

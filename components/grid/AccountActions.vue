@@ -6,6 +6,7 @@ interface Props {
   params: ICellRendererParams & {
     onSync?: (params: ICellRendererParams) => void;
     onStop?: (params: ICellRendererParams) => void;
+    onMindmap?: (params: ICellRendererParams) => void;
     isDeleting: boolean;
     isSyncing: boolean;
     syncingRowId: string | null;
@@ -18,6 +19,9 @@ function sync() {
 }
 function stop() {
   props.params.onStop && props.params.onStop(props.params);
+}
+function mindmap() {
+  props.params.onMindmap && props.params.onMindmap(props.params);
 }
 const isDisabled = computed(() => props.params.isDeleting || props.params.isSyncing);
 const isLoading = computed(() => props.params.isSyncing && props.params.node.id === props.params.syncingRowId);
@@ -36,6 +40,15 @@ const isLoading = computed(() => props.params.isSyncing && props.params.node.id 
       size="xs"
       :disabled="isDisabled"
       @click="sync"
-    ></UButton>
+    />
+    <UButton
+      icon="i-lucide:brain"
+      color="indigo"
+      size="xs"
+      :disabled="isDisabled"
+      @click="mindmap"
+    >
+      脑图
+    </UButton>
   </div>
 </template>

@@ -328,6 +328,9 @@ const columnDefs = ref<ColDef[]>([
         syncingRowId.value = null;
         isSyncing.value = false;
       },
+      onMindmap: (params: ICellRendererParams) => {
+        exportMindmap(params.data as MpAccount);
+      },
       isDeleting: isDeleting,
       isSyncing: isSyncing,
       syncingRowId: syncingRowId,
@@ -478,6 +481,65 @@ function exportAccount() {
     toast.success('导出公众号', `成功导出了 ${rows.length} 个公众号`);
   } finally {
     exportBtnLoading.value = false;
+  }
+}
+
+// 为单个公众号导出“脑图”Markdown：按标题前缀做简单聚类
+async function exportMindmap(account: MpAccount) {
+  try {
+    const articles = await getArticleCache(account.fakeid, Date.now());
+    if (!articles || articles.length === 0) {
+      toast.warning('提示', `公众号【${account.nickname}】还没有同步文章，无法生成脑图`);
+      return;
+    }
+
+    const groupMap = new Map<string, typeof articles>();
+    const takePrefix = (title: string) => {
+      const trimmed = (title || '').trim();
+      if (!trimmed) return '其它';
+      return trimmed.slice(0, 4);
+    };
+
+    for (const article of articles) {
+      const key = takePrefix(article.title);
+      if (!groupMap.has(key)) {
+        groupMap.set(key, []);
+      }
+      groupMap.get(key)!.push(article);
+    }
+
+    const lines: string[] = [];
+    const displayName = account.nickname || account.alias || account.fakeid;
+    lines.push(`# ${displayName} 脑图`);
+    lines.push('');
+
+    for (const [keyword, list] of groupMap.entries()) {
+      const sorted = [...list].sort((a, b) => a.update_time - b.update_time);
+      lines.push(`- ${keyword}`);
+      for (const a of sorted) {
+        const dateStr = a.update_time ? formatTimeStamp(a.update_time) : '';
+        const title = (a.title || '').replace(/\s+/g, ' ').trim();
+        lines.push(`  - ${dateStr} ${title}`);
+      }
+      lines.push('');
+    }
+
+    const markdown = lines.join('\n');
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = `${displayName} 脑图`.replace(/[\/\\:*?"<>|]/g, '_');
+    a.href = url;
+    a.download = `${safeName}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast.success('脑图导出成功', `已为公众号【${displayName}】生成脑图 Markdown 文件`);
+  } catch (e: any) {
+    console.error('导出脑图失败', e);
+    toast.error('脑图导出失败', e?.message || '生成脑图时出错');
   }
 }
 

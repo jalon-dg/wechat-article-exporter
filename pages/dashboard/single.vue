@@ -622,12 +622,14 @@ async function removeRows() {
               { label: 'HTML', event: 'export-article-html' },
               { label: 'Txt', event: 'export-article-text' },
               { label: 'Markdown', event: 'export-article-markdown' },
+              { label: '电子书 (EPUB)', event: 'export-article-epub' },
             ]"
             @export-article-excel="exportFile('excel', selectedArticleUrls)"
             @export-article-json="exportFile('json', selectedArticleUrls)"
             @export-article-html="exportFile('html', selectedArticleUrls)"
             @export-article-text="exportFile('text', selectedArticleUrls)"
             @export-article-markdown="exportFile('markdown', selectedArticleUrls)"
+            @export-article-epub="exportFile('epub', selectedArticleUrls)"
           >
             <UButton
               :loading="exportBtnLoading"

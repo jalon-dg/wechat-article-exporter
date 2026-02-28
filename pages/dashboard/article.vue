@@ -388,6 +388,16 @@ const selectedArticleUrls = computed(() => {
   return selectedArticles.value.map(article => article.link);
 });
 
+// 抓取/导出时使用的文章链接：有勾选则用勾选的，否则用当前表格全部
+const urlsForDownload = computed(() => {
+  if (selectedArticleUrls.value.length > 0) return selectedArticleUrls.value;
+  return globalRowData.map(a => a.link);
+});
+const urlsForExport = computed(() => {
+  if (selectedArticleUrls.value.length > 0) return selectedArticleUrls.value;
+  return globalRowData.map(a => a.link);
+});
+
 const {
   loading: downloadBtnLoading,
   completed_count: downloadCompletedCount,
@@ -520,9 +530,9 @@ function copyWechatLink() {
               { label: '阅读量 (需要Credential)', event: 'download-article-metadata' },
               { label: '留言内容 (需要Credential)', event: 'download-article-comment' },
             ]"
-            @download-article-html="download('html', selectedArticleUrls)"
-            @download-article-metadata="download('metadata', selectedArticleUrls)"
-            @download-article-comment="download('comment', selectedArticleUrls)"
+            @download-article-html="download('html', urlsForDownload)"
+            @download-article-metadata="download('metadata', urlsForDownload)"
+            @download-article-comment="download('comment', urlsForDownload)"
           >
             <UButton
               :loading="downloadBtnLoading"
@@ -542,14 +552,16 @@ function copyWechatLink() {
               { label: 'Txt', event: 'export-article-text' },
               { label: 'Markdown', event: 'export-article-markdown' },
               { label: 'Word (内测中)', event: 'export-article-word' },
+              { label: '电子书 (EPUB)', event: 'export-article-epub' },
               // { label: 'PDF (计划中)', event: 'export-article-pdf', disabled: true },
             ]"
-            @export-article-excel="exportFile('excel', selectedArticleUrls)"
-            @export-article-json="exportFile('json', selectedArticleUrls)"
-            @export-article-html="exportFile('html', selectedArticleUrls)"
-            @export-article-text="exportFile('text', selectedArticleUrls)"
-            @export-article-markdown="exportFile('markdown', selectedArticleUrls)"
-            @export-article-word="exportFile('word', selectedArticleUrls)"
+            @export-article-excel="exportFile('excel', urlsForExport)"
+            @export-article-json="exportFile('json', urlsForExport)"
+            @export-article-html="exportFile('html', urlsForExport)"
+            @export-article-text="exportFile('text', urlsForExport)"
+            @export-article-markdown="exportFile('markdown', urlsForExport)"
+            @export-article-word="exportFile('word', urlsForExport)"
+            @export-article-epub="exportFile('epub', urlsForExport)"
           >
             <UButton
               :loading="exportBtnLoading"
