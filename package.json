@@ -5,7 +5,12 @@
   "scripts": {
     "debug": "nuxt dev --inspect",
     "dev": "nuxt dev",
+    "dev:electron": "concurrently -k \"nuxt dev\" \"npm run electron:watch\"",
+    "electron:watch": "tsc -p electron/tsconfig.json --watch",
+    "electron:start": "tsc -p electron/tsconfig.json && electron . --dev",
     "build": "nuxt build",
+    "build:electron": "nuxt build && tsc -p electron/tsconfig.json && electron-builder",
+    "build:electron:win": "nuxt build && tsc -p electron/tsconfig.json && electron-builder --win",
     "preview": "NITRO_PRESET=cloudflare_pages nuxt build && npx wrangler --cwd dist pages dev",
     "format": "biome check --write",
     "postinstall": "nuxt prepare",
@@ -32,6 +37,7 @@
     "defu": "^6.1.4",
     "dexie": "^4.0.11",
     "dompurify": "^3.2.5",
+    "electron-log": "^5.2.4",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "happy-dom": "^20.1.0",
@@ -53,8 +59,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
+    "@electron/asar": "^3.3.1",
     "@types/file-saver": "^2.0.7",
     "@types/turndown": "^5.0.5",
+    "concurrently": "^9.1.2",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
     "prettier": "^3.5.2",
     "tailwindcss-debug-screens": "^2.2.1",
     "typescript": "^5.5.3"
@@ -62,5 +72,36 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+  "packageManager": "yarn@1.22.22@sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610",
+  "build": {
+    "appId": "com.wechat.article.exporter",
+    "productName": "微信文章导出器",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": ["dmg"],
+      "artifactName": "${productName}-${version}.${ext}"
+    }
+  }
 }

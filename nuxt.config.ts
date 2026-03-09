@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     enabled: false,
   },
   modules: ['@vueuse/nuxt', '@nuxt/ui', 'nuxt-monaco-editor', '@sentry/nuxt/module', 'nuxt-umami'],
+  plugins: ['~/electron/plugin/electron.client.ts'],
   ssr: false,
   runtimeConfig: {
     public: {

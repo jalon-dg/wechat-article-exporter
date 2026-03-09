@@ -1090,33 +1090,69 @@ ${commentHTML}
   // 获取文件存储目录
   private async acquireExportDirectoryHandle(): Promise<void> {
     if (!this.exportRootDirectoryHandle) {
-      // @ts-ignore
-      this.exportRootDirectoryHandle = await window.showDirectoryPicker({
-        mode: 'readwrite',
-        startIn: 'downloads',
-      });
+      // 检查是否在 Electron 环境中运行
+      if (window.electronAPI) {
+        // 在 Electron 中使用保存对话框选择目录
+        const result = await window.electronAPI.showOpenDialog({
+          title: '选择导出目录',
+          properties: ['openDirectory', 'createDirectory'],
+        });
+        if (result.canceled || result.filePaths.length === 0) {
+          throw new Error('未选择导出目录');
+        }
+        // 将路径存储为字符串（自定义类型标记为 Electron 目录）
+        this.exportRootDirectoryHandle = result.filePaths[0] as unknown as FileSystemDirectoryHandle;
+      } else {
+        // 在浏览器中使用 FileSystemDirectoryHandle API
+        // @ts-ignore
+        this.exportRootDirectoryHandle = await window.showDirectoryPicker({
+          mode: 'readwrite',
+          startIn: 'downloads',
+        });
+      }
     }
   }
 
   // 写入文件
   public async writeFile(path: string, file: Blob): Promise<void> {
-    const segment = path.split('/');
-    const filename = segment[segment.length - 1];
-    let directory = this.exportRootDirectoryHandle!;
-    if (segment.length > 1) {
-      // 创建目录
-      for (const name of segment.slice(0, -1)) {
-        directory = await directory.getDirectoryHandle(name, { create: true }).catch(e => {
-          console.warn(`路径(${path})(${name})中包含非法字符，不能作为文件系统的路径名`);
-          throw e;
-        });
+    // 检查是否在 Electron 环境中运行
+    if (window.electronAPI && typeof this.exportRootDirectoryHandle === 'string') {
+      // Electron 模式：使用 fs API 写入文件
+      const basePath = this.exportRootDirectoryHandle as string;
+      const fullPath = path.includes('/') || path.includes('\\')
+        ? path
+        : `${basePath}/${path}`;
+
+      // 将 Blob 转换为 base64
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+
+      const result = await window.electronAPI.writeFileFromBlob(fullPath, base64, file.type);
+      if (!result.success) {
+        throw new Error(`写入文件失败: ${result.error}`);
       }
+    } else {
+      // 浏览器模式：使用 FileSystemDirectoryHandle API
+      const segment = path.split('/');
+      const filename = segment[segment.length - 1];
+      let directory = this.exportRootDirectoryHandle as FileSystemDirectoryHandle;
+      if (segment.length > 1) {
+        // 创建目录
+        for (const name of segment.slice(0, -1)) {
+          directory = await directory.getDirectoryHandle(name, { create: true }).catch(e => {
+            console.warn(`路径(${path})(${name})中包含非法字符，不能作为文件系统的路径名`);
+            throw e;
+          });
+        }
+      }
+      const fileHandle = await directory.getFileHandle(filename, { create: true });
+      // @ts-ignore
+      const writable = await fileHandle.createWritable();
+      await writable.write(file);
+      await writable.close();
     }
-    const fileHandle = await directory.getFileHandle(filename, { create: true });
-    // @ts-ignore
-    const writable = await fileHandle.createWritable();
-    await writable.write(file);
-    await writable.close();
   }
 
   // 确定导出文件的目录名

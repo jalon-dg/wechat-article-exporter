@@ -67,17 +67,80 @@ export async function export2ExcelFile(data: ExcelExportEntity[], filename: stri
   // 导出为 Excel 文件
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
-  saveAs(blob, `${filename}.xlsx`);
+
+  // 检查是否在 Electron 环境中运行
+  if (window.electronAPI) {
+    const result = await window.electronAPI.showSaveDialog({
+      title: '导出 Excel 文件',
+      defaultPath: `${filename}.xlsx`,
+      filters: [{ name: 'Excel 文件', extensions: ['xlsx'] }],
+    });
+    if (result.canceled || !result.filePath) {
+      throw new Error('用户取消保存');
+    }
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
+    if (!writeResult.success) {
+      throw new Error(`保存文件失败: ${writeResult.error}`);
+    }
+  } else {
+    saveAs(blob, `${filename}.xlsx`);
+  }
 }
 
 // 导出为 json 文件
 export async function export2JsonFile(data: ExcelExportEntity[], filename: string) {
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  saveAs(blob, `${filename}.json`);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+  // 检查是否在 Electron 环境中运行
+  if (window.electronAPI) {
+    const result = await window.electronAPI.showSaveDialog({
+      title: '导出 JSON 文件',
+      defaultPath: `${filename}.json`,
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePath) {
+      throw new Error('用户取消保存');
+    }
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
+    if (!writeResult.success) {
+      throw new Error(`保存文件失败: ${writeResult.error}`);
+    }
+  } else {
+    saveAs(blob, `${filename}.json`);
+  }
 }
 
 // 导出公众号数据
 export async function exportAccountJsonFile(data: AccountManifest, filename: string) {
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  saveAs(blob, `${filename}.json`);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+  // 检查是否在 Electron 环境中运行
+  if (window.electronAPI) {
+    const result = await window.electronAPI.showSaveDialog({
+      title: '导出 JSON 文件',
+      defaultPath: `${filename}.json`,
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePath) {
+      throw new Error('用户取消保存');
+    }
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
+    if (!writeResult.success) {
+      throw new Error(`保存文件失败: ${writeResult.error}`);
+    }
+  } else {
+    saveAs(blob, `${filename}.json`);
+  }
 }
