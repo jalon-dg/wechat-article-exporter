@@ -1,0 +1,33 @@
+<view class="orders-page">
+  <view class="orders-list">
+    <view
+      class="order-card"
+      wx:for="{{orders}}"
+      wx:key="orderId"
+      bindtap="onOrderClick"
+      data-orderid="{{item.orderId}}"
+      data-bizname="{{item.bizName}}"
+      data-amount="{{item.amount}}"
+      data-status="{{item.status}}"
+    >
+      <view class="order-header">
+        <text class="biz-name">{{item.bizName}}</text>
+        <text class="status" style="color: {{getStatusColor(item.status)}}">
+          {{getStatusText(item.status)}}
+        </text>
+      </view>
+      <view class="order-footer">
+        <text class="amount">¥{{item.amount / 100}}</text>
+        <text class="date">{{formatDate(item.createdAt)}}</text>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{orders.length === 0 && !loading}}">
+      <text class="empty-text">暂无订单</text>
+    </view>
+
+    <view class="loading" wx:if="{{loading}}">
+      <text class="loading-text">加载中...</text>
+    </view>
+  </view>
+</view>

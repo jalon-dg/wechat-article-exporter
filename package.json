@@ -26,6 +26,7 @@
     "@vueuse/nuxt": "^10.11.0",
     "ag-grid-enterprise": "^34.0.0",
     "ag-grid-vue3": "^34.0.0",
+    "better-sqlite3": "^11.10.0",
     "cheerio": "^1.1.2",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.12",

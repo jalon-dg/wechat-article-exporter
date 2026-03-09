@@ -1,0 +1,50 @@
+<view class="order-page">
+  <view class="order-card">
+    <view class="info-row">
+      <text class="label">公众号</text>
+      <text class="value">{{bizName}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">订单号</text>
+      <text class="value">{{orderId}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">金额</text>
+      <text class="value price">¥{{amount / 100}}</text>
+    </view>
+    <view class="info-row">
+      <text class="label">状态</text>
+      <text class="value" style="color: {{getStatusColor(status)}}">{{getStatusText(status)}}</text>
+    </view>
+  </view>
+
+  <view class="pay-section" wx:if="{{status === 'pending'}}">
+    <button
+      class="pay-btn {{loading ? 'loading' : ''}}"
+      bindtap="handlePay"
+      disabled="{{loading}}"
+    >
+      {{loading ? '处理中...' : '立即支付'}}
+    </button>
+    <text class="pay-tip">点击支付即表示您同意我们的服务条款</text>
+  </view>
+
+  <view class="progress-section" wx:if="{{status === 'paid' || status === 'processing' || status === 'completed'}}">
+    <text class="section-title">处理进度</text>
+    <view class="task-item" wx:for="{{tasks}}" wx:key="id">
+      <view class="task-header">
+        <text class="task-name">{{getTaskName(item.type)}}</text>
+        <text class="task-status" style="color: {{getStatusColor(item.status)}}">
+          {{getStatusText(item.status)}}
+        </text>
+      </view>
+      <progress percent="{{item.progress}}" stroke-width="8" color="{{getStatusColor(item.status)}}" backgroundColor="#f5f5f5" />
+      <text class="task-error" wx:if="{{item.error}}">{{item.error}}</text>
+    </view>
+  </view>
+
+  <view class="success-section" wx:if="{{status === 'completed'}}">
+    <text class="success-icon">✅</text>
+    <text class="success-text">电子书已发送到您的邮箱</text>
+  </view>
+</view>
