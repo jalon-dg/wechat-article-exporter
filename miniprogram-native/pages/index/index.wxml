@@ -1,0 +1,60 @@
+<view class="index-page">
+  <view class="header">
+    <image class="logo" src="https://down.mptext.top/assets/logo.svg" mode="aspectFit" />
+    <text class="title">公众号电子书</text>
+    <text class="desc">输入公众号名称和邮箱，付费后生成电子书发送到邮箱</text>
+  </view>
+
+  <view class="form">
+    <view class="form-item">
+      <text class="label">公众号</text>
+      <input
+        class="input"
+        placeholder="请输入公众号名称"
+        value="{{bizName}}"
+        bindinput="onBizNameInput"
+      />
+    </view>
+    <view class="form-item">
+      <text class="label">邮箱</text>
+      <input
+        class="input"
+        placeholder="请输入接收邮箱"
+        type="text"
+        value="{{email}}"
+        bindinput="onEmailInput"
+      />
+    </view>
+
+    <view class="price-info">
+      <text class="price-label">价格：</text>
+      <text class="price-value">¥5.00</text>
+    </view>
+
+    <button
+      class="submit-btn {{loading ? 'loading' : ''}}"
+      bindtap="handleSubmit"
+      disabled="{{loading}}"
+    >
+      {{loading ? '创建中...' : '创建订单'}}
+    </button>
+  </view>
+
+  <view class="features">
+    <view class="feature-item">
+      <text class="feature-icon">📚</text>
+      <text class="feature-title">EPUB格式</text>
+      <text class="feature-desc">支持主流阅读器</text>
+    </view>
+    <view class="feature-item">
+      <text class="feature-icon">📧</text>
+      <text class="feature-title">邮箱发送</text>
+      <text class="feature-desc">方便快捷下载</text>
+    </view>
+    <view class="feature-item">
+      <text class="feature-icon">⚡</text>
+      <text class="feature-title">快速生成</text>
+      <text class="feature-desc">自动抓取文章</text>
+    </view>
+  </view>
+</view>

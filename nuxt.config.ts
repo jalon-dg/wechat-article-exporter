@@ -36,6 +36,9 @@ export default defineNuxtConfig({
     client: 'hidden',
   },
   nitro: {
+    routeRules: {
+      '/api/**': { cors: true },
+    },
     minify: process.env.NODE_ENV === 'production',
     storage: {
       kv: {

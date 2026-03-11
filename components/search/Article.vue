@@ -17,23 +17,32 @@
 const query = defineModel<string>();
 const emit = defineEmits(['search']);
 const { metaSymbol } = useShortcuts();
+const inputRef = ref();
+
 function search() {
   emit('search', query.value);
 }
 
-const inputRef = ref();
-defineShortcuts({
-  meta_k: {
-    usingInput: true,
-    handler: () => {
-      inputRef.value.input.focus();
-    },
-  },
-  escape: {
-    usingInput: true,
-    handler: () => {
-      inputRef.value.input.blur();
-    },
-  },
+function handleKeydown(event: KeyboardEvent) {
+  const isMac = /mac/i.test(navigator.platform);
+  const isMeta = isMac ? event.metaKey : event.ctrlKey;
+
+  if (isMeta && event.key.toLowerCase() === 'k') {
+    event.preventDefault();
+    inputRef.value?.input?.focus();
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    inputRef.value?.input?.blur();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
 });
 </script>
