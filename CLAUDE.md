@@ -21,10 +21,23 @@ Supports downloading articles in multiple formats: HTML (100% preserves original
 ## Commands
 
 ```bash
-yarn dev          # Start development server
-yarn build        # Production build
-yarn format       # Format code with Biome (organizes imports)
-yarn docker:build # Build Docker image
+# Development
+yarn dev              # Start Nuxt dev server (localhost:3000)
+yarn dev:electron     # Start with Electron (Nuxt + Electron watch mode)
+yarn electron:start  # Run Electron desktop app in dev mode
+
+# Building
+yarn build           # Production build for Nuxt
+yarn build:electron  # Build Nuxt + compile Electron + package desktop app
+yarn build:electron:win  # Build for Windows (NSIS installer)
+yarn preview         # Preview Cloudflare Pages build locally
+
+# Code quality
+yarn format          # Format code with Biome (organizes imports)
+yarn debug           # Nuxt dev with inspector
+
+# Docker
+yarn docker:build    # Build Docker image
 yarn docker:publish  # Push to GitHub Container Registry
 ```
 
@@ -59,11 +72,20 @@ wechat-article-exporter/
 - **API Pattern**: Nitro API routes in `server/api/` with `.get.ts` and `.post.ts` suffixes
 - **WeChat Integration**: Mini-program handles payment processing, web APIs handle article scraping via WeChat's search functionality
 - **Code Formatting**: Biome with single quotes, organizes imports on format
+- **Electron Desktop**: Compiled to CommonJS via separate tsconfig, supports system tray and native dialogs
+- **Export Formats**: HTML (full fidelity), JSON, Excel, TXT, MD, DOCX - handled by `utils/download/Exporter.ts`
 
 ## Key Patterns
 
 1. **API Endpoints**: File-based routing in `server/api/[feature]/[method].ts`
+   - `server/api/public/v1/` - Public article search/download APIs
+   - `server/api/web/mp/` - WeChat account login and article scraping
+   - `server/api/web/login/` - WeChat QR code login flow
+   - `server/api/miniapp/` - Mini-program payment and task APIs
 2. **Vue Components**: Feature-based organization in `components/`
 3. **Database**: SQLite stored in `server/db/`, accessed via better-sqlite3
 4. **Mini-program**: Native WeChat mini-program in `miniprogram-native/` with separate payment/order flow
 5. **Environment**: Uses `.env.example` for configuration template
+   - `NITRO_KV_DRIVER`: Storage backend (memory/fs/cloudflare-kv-binding)
+   - `NUXT_AGGRID_LICENSE`: AG Grid Enterprise license
+   - `DEBUG_KEY`: Debug access key

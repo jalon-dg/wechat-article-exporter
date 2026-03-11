@@ -2,6 +2,7 @@
   "name": "wechat-article-exporter",
   "version": "2.3.11",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "debug": "nuxt dev --inspect",
     "dev": "nuxt dev",
@@ -73,7 +74,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "yarn@1.22.22@sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610",
+  "packageManager": "yarn@1.22.22",
   "build": {
     "appId": "com.wechat.article.exporter",
     "productName": "微信文章导出器",
