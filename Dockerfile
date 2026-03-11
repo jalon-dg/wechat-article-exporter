@@ -21,7 +21,7 @@ ENV NODE_ENV=production \
     NITRO_KV_DRIVER=fs \
     NITRO_KV_BASE=.data/kv
 
-RUN yarn build
+RUN yarn web:build
 
 
 # 运行时层
@@ -41,7 +41,7 @@ LABEL maintainer="findsource@proton.me" \
 WORKDIR /app
 
 # 复制构建输出
-COPY --from=build-env /app/.output ./
+COPY --from=build-env /app/apps/web/.output ./
 
 # 创建 KV 存储目录并设置权限（以 root 运行，确保 node 用户可写）
 RUN mkdir -p .data/kv && chown -R node:node /app

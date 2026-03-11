@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog, Menu, Tray, nativeImage, shell, No
 import path from 'path';
 import fs from 'fs';
 import log from 'electron-log';
+import net from 'net';
+import { spawn, type ChildProcess } from 'node:child_process';
 
 // __dirname is available in CommonJS, but since we're using ESM modules we need to define it
 // But since tsc compiles to CommonJS (NodeNext), __dirname should work directly
@@ -26,6 +28,7 @@ process.on('unhandledRejection', reason => {
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let webServer: ChildProcess | null = null;
 
 // Window state storage
 const windowStateFile = path.join(app.getPath('userData'), 'window-state.json');
@@ -84,7 +87,7 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false,
     },
-    icon: path.join(__dirname, '../assets/logo.svg'),
+    icon: path.join(__dirname, 'assets/logo.svg'),
     title: '微信文章导出器',
   });
 
@@ -119,14 +122,78 @@ function createWindow(): void {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    startWebServer()
+      .then(url => mainWindow?.loadURL(url))
+      .catch(err => {
+        log.error('Failed to start web server:', err);
+        dialog.showErrorBox('启动失败', `无法启动内置服务：${String(err)}`);
+        app.exit(1);
+      });
   }
 
   log.info('Main window created');
 }
 
+function waitForPort(host: string, port: number, timeoutMs: number): Promise<void> {
+  const start = Date.now();
+
+  return new Promise((resolve, reject) => {
+    const tryOnce = () => {
+      const socket = new net.Socket();
+      socket.setTimeout(1000);
+
+      socket.once('connect', () => {
+        socket.destroy();
+        resolve();
+      });
+      socket.once('timeout', () => socket.destroy());
+      socket.once('error', () => socket.destroy());
+      socket.once('close', () => {
+        if (Date.now() - start > timeoutMs) {
+          reject(new Error(`Timeout waiting for ${host}:${port}`));
+          return;
+        }
+        setTimeout(tryOnce, 250);
+      });
+
+      socket.connect(port, host);
+    };
+
+    tryOnce();
+  });
+}
+
+async function startWebServer(): Promise<string> {
+  if (webServer) return 'http://127.0.0.1:3000';
+
+  const port = Number(process.env.PORT || 38765);
+  const host = '127.0.0.1';
+  const appPath = app.getAppPath();
+  const serverEntry = path.join(appPath, 'apps/web/.output/server/index.mjs');
+
+  webServer = spawn(process.execPath, [serverEntry], {
+    stdio: 'pipe',
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+      NODE_ENV: 'production',
+      HOST: host,
+      PORT: String(port),
+    },
+  });
+
+  webServer.stdout?.on('data', buf => log.info(`[web] ${String(buf).trimEnd()}`));
+  webServer.stderr?.on('data', buf => log.error(`[web] ${String(buf).trimEnd()}`));
+  webServer.on('exit', (code, signal) => {
+    log.error(`Web server exited: code=${code} signal=${signal}`);
+  });
+
+  await waitForPort(host, port, 15_000);
+  return `http://${host}:${port}`;
+}
+
 function createTray(): void {
-  const iconPath = path.join(__dirname, '../assets/logo.svg');
+  const iconPath = path.join(__dirname, 'assets/logo.svg');
   let trayIcon: NativeImage;
 
   try {
@@ -353,6 +420,13 @@ app.on('before-quit', () => {
   isQuitting = true;
   saveWindowState();
   log.info('Application quitting');
+  if (webServer && !webServer.killed) {
+    try {
+      webServer.kill();
+    } catch (e) {
+      log.error('Failed to kill web server:', e);
+    }
+  }
 });
 
 log.info('Main process initialized');

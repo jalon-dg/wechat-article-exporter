@@ -2,19 +2,26 @@
   "name": "wechat-article-exporter",
   "version": "2.3.11",
   "type": "module",
-  "main": "electron/main.js",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "main": "apps/electron/main.js",
   "scripts": {
-    "debug": "nuxt dev --inspect",
-    "dev": "nuxt dev",
-    "dev:electron": "concurrently -k \"nuxt dev\" \"npm run electron:watch\"",
-    "electron:watch": "tsc -p electron/tsconfig.json --watch",
-    "electron:start": "tsc -p electron/tsconfig.json && electron . --dev",
-    "build": "nuxt build",
-    "build:electron": "nuxt build && tsc -p electron/tsconfig.json && electron-builder",
-    "build:electron:win": "nuxt build && tsc -p electron/tsconfig.json && electron-builder --win",
-    "preview": "NITRO_PRESET=cloudflare_pages nuxt build && npx wrangler --cwd dist pages dev",
+    "web:debug": "yarn --cwd apps/web debug",
+    "web:dev": "yarn --cwd apps/web dev",
+    "web:build": "yarn --cwd apps/web build",
+    "web:preview": "yarn --cwd apps/web preview",
+    "dev": "yarn web:dev",
+    "dev:electron": "concurrently -k \"yarn web:dev\" \"yarn electron:watch\"",
+    "electron:watch": "tsc -p apps/electron/tsconfig.json --watch",
+    "electron:start": "tsc -p apps/electron/tsconfig.json && electron apps/electron --dev",
+    "build": "yarn web:build",
+    "build:electron": "yarn web:build && tsc -p apps/electron/tsconfig.json && electron-builder",
+    "build:electron:win": "yarn web:build && tsc -p apps/electron/tsconfig.json && electron-builder --win",
     "format": "biome check --write",
-    "postinstall": "nuxt prepare",
+    "postinstall": "node ./scripts/postinstall.mjs",
     "docker:build": "docker build --build-arg VERSION=$npm_package_version -t ghcr.io/wechat-article/wechat-article-exporter:$npm_package_version .",
     "docker:publish": "docker push ghcr.io/wechat-article/wechat-article-exporter:$npm_package_version"
   },
@@ -82,8 +89,8 @@
       "output": "dist-electron"
     },
     "files": [
-      "dist/**/*",
-      "electron/**/*",
+      "apps/web/.output/**/*",
+      "apps/electron/**/*",
       "package.json"
     ],
     "win": {

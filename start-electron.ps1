@@ -8,4 +8,4 @@ Write-Host "Electron path: $electronPath"
 Set-Location $projectPath
 
 # Start Electron
-& $electronPath .
+& $electronPath "apps/electron" --dev
