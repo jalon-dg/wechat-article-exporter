@@ -2,7 +2,7 @@
  * 支付回调
  * 注意：这里应该是微信支付回调，需要验证签名
  */
-import { handlePaymentCallback } from '~/server/services/task-processor';
+import { handlePaymentCallback, processTaskQueue } from '~/server/services/task-processor';
 import { z } from 'zod';
 
 const paymentCallbackSchema = z.object({
@@ -33,6 +33,11 @@ export default defineEventHandler(async event => {
         message: '订单不存在',
       };
     }
+
+    // 支付成功后触发一次队列处理（非阻塞）
+    processTaskQueue().catch(e => {
+      console.error('Process task queue error after payment:', e);
+    });
 
     return {
       code: 0,

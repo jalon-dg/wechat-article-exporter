@@ -2,8 +2,8 @@ const api = require('../../api/request.js');
 
 Page({
   data: {
-    bizName: '',
-    email: '',
+    bizName: '张良计',
+    email: 'jalongod@163.com',
     loading: false,
   },
 

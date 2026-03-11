@@ -8,6 +8,13 @@ Page({
     status: 'pending',
     tasks: [],
     loading: false,
+    pollingTimer: null,
+  },
+
+  onUnload() {
+    if (this.data.pollingTimer) {
+      clearInterval(this.data.pollingTimer);
+    }
   },
 
   onLoad(options) {
@@ -27,20 +34,45 @@ Page({
   },
 
   async pollStatus() {
-    try {
-      const result = await api.getOrderStatus(this.data.orderId);
-      this.setData({
-        status: result.status,
-        tasks: result.tasks,
-      });
+    // 清除之前的定时器
+    if (this.data.pollingTimer) {
+      clearInterval(this.data.pollingTimer);
+      this.setData({ pollingTimer: null });
+    }
 
-      if (result.status === 'completed') {
-        wx.showToast({ title: '订单已完成！请查收邮箱', icon: 'success' });
-      } else if (result.status === 'failed') {
-        wx.showToast({ title: '订单处理失败', icon: 'none' });
+    const doPoll = async () => {
+      try {
+        const result = await api.getOrderStatus(this.data.orderId);
+        this.setData({
+          status: result.status,
+          tasks: result.tasks,
+        });
+
+        if (result.status === 'completed') {
+          wx.showToast({ title: '订单已完成！请查收邮箱', icon: 'success' });
+          if (this.data.pollingTimer) {
+            clearInterval(this.data.pollingTimer);
+            this.setData({ pollingTimer: null });
+          }
+        } else if (result.status === 'failed') {
+          wx.showToast({ title: '订单处理失败', icon: 'none' });
+          if (this.data.pollingTimer) {
+            clearInterval(this.data.pollingTimer);
+            this.setData({ pollingTimer: null });
+          }
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
+    };
+
+    // 立即执行一次
+    await doPoll();
+
+    // 如果未完成，设置定时轮询（每3秒）
+    if (this.data.status !== 'completed' && this.data.status !== 'failed') {
+      const timer = setInterval(doPoll, 3000);
+      this.setData({ pollingTimer: timer });
     }
   },
 

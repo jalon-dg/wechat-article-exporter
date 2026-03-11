@@ -108,14 +108,8 @@ export function handlePaymentCallback(orderId: string, paymentTime: number): Ord
     pay_time: paymentTime,
   });
 
-  // 更新任务状态，开始抓取
-  const tasks = getPendingTasks();
-  const orderTasks = tasks.filter(t => t.order_id === orderId);
-  for (const task of orderTasks) {
-    updateTask(task.id, { status: 'processing' });
-  }
-
-  // 更新订单状态为处理中
+  // 这里不要把任务提前标记为 processing：
+  // 实际执行由 processTaskQueue() 从 pending 拉起（否则会导致队列永远不处理）
   updateOrder(orderId, { status: 'processing' });
 
   return getOrder(orderId) || null;
@@ -139,7 +133,6 @@ async function generateEpub(
   bizName: string,
   articles: Array<{ title: string; content: string; update_time: number }>
 ): Promise<Buffer> {
-  const parser = new DOMParser();
   const turndownService = new TurndownService();
 
   const zip = new JSZip();
