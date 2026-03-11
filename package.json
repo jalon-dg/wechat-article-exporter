@@ -7,19 +7,21 @@
     "apps/*",
     "packages/*"
   ],
-  "main": "apps/electron/main.js",
+  "main": "apps/pc/main.js",
   "scripts": {
     "web:debug": "yarn --cwd apps/web debug",
     "web:dev": "yarn --cwd apps/web dev",
     "web:build": "yarn --cwd apps/web build",
     "web:preview": "yarn --cwd apps/web preview",
+    "pc:dev": "yarn --cwd apps/pc dev",
+    "pc:build": "yarn --cwd apps/pc build",
     "dev": "yarn web:dev",
-    "dev:electron": "concurrently -k \"yarn web:dev\" \"yarn electron:watch\"",
-    "electron:watch": "tsc -p apps/electron/tsconfig.json --watch",
-    "electron:start": "tsc -p apps/electron/tsconfig.json && electron apps/electron --dev",
+    "dev:electron": "concurrently -k \"yarn pc:dev\" \"yarn electron:watch\"",
+    "electron:watch": "tsc -p apps/pc/tsconfig.electron.json --watch",
+    "electron:start": "tsc -p apps/pc/tsconfig.electron.json && electron apps/pc --dev",
     "build": "yarn web:build",
-    "build:electron": "yarn web:build && tsc -p apps/electron/tsconfig.json && electron-builder",
-    "build:electron:win": "yarn web:build && tsc -p apps/electron/tsconfig.json && electron-builder --win",
+    "build:electron": "yarn pc:build && tsc -p apps/pc/tsconfig.electron.json && electron-builder",
+    "build:electron:win": "yarn pc:build && tsc -p apps/pc/tsconfig.electron.json && electron-builder --win",
     "format": "biome check --write",
     "postinstall": "node ./scripts/postinstall.mjs",
     "docker:build": "docker build --build-arg VERSION=$npm_package_version -t ghcr.io/wechat-article/wechat-article-exporter:$npm_package_version .",
@@ -90,7 +92,7 @@
     },
     "files": [
       "apps/web/.output/**/*",
-      "apps/electron/**/*",
+      "apps/pc/**/*",
       "package.json"
     ],
     "win": {

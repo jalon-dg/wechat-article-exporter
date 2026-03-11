@@ -1,6 +1,0 @@
-{
-  "name": "wechat-article-exporter-electron",
-  "private": true,
-  "type": "commonjs",
-  "main": "main.js"
-}
