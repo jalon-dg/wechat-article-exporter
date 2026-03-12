@@ -2,7 +2,6 @@
   "name": "wechat-article-exporter-pc",
   "version": "2.3.11",
   "private": true,
-  "type": "module",
   "main": "main.js",
   "scripts": {
     "dev": "nuxt dev --port 3001",
