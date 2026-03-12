@@ -11,9 +11,16 @@ dist-electron
 electron/*.js
 electron/*.js.map
 electron/*.d.ts
-apps/pc/*.js
-apps/pc/*.js.map
-apps/pc/*.d.ts
+apps/electron/*.js
+apps/electron/*.js.map
+apps/electron/*.d.ts
+apps/electron/*.js
+apps/electron/*.js.map
+apps/electron/*.d.ts
+
+# SQLite databases
+apps/web/data/*.db
+apps/electron/*.db
 
 # Node dependencies
 node_modules

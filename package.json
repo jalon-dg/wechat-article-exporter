@@ -3,11 +3,17 @@
   "version": "2.3.11",
   "type": "module",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "main": "apps/pc/main.js",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/better-sqlite3",
+      "**/better-sqlite3/**"
+    ]
+  },
+  "main": "apps/electron/main.js",
   "scripts": {
     "web:debug": "yarn --cwd apps/web debug",
     "web:dev": "yarn --cwd apps/web dev",
@@ -15,11 +21,11 @@
     "web:preview": "yarn --cwd apps/web preview",
     "dev": "yarn web:dev",
     "dev:electron": "concurrently -k \"yarn web:dev\" \"yarn electron:watch\"",
-    "electron:watch": "tsc -p apps/pc/tsconfig.electron.json --watch",
-    "electron:start": "tsc -p apps/pc/tsconfig.electron.json && electron apps/pc --dev",
+    "electron:watch": "tsc -p apps/electron/tsconfig.electron.json --watch",
+    "electron:start": "tsc -p apps/electron/tsconfig.electron.json && electron apps/electron --dev",
     "build": "yarn web:build",
-    "build:electron": "yarn web:build && tsc -p apps/pc/tsconfig.electron.json && electron-builder",
-    "build:electron:win": "yarn web:build && tsc -p apps/pc/tsconfig.electron.json && electron-builder --win",
+    "build:electron": "yarn web:build && tsc -p apps/electron/tsconfig.electron.json && electron-builder",
+    "build:electron:win": "yarn web:build && tsc -p apps/electron/tsconfig.electron.json && electron-builder --win",
     "format": "biome check --write",
     "postinstall": "node ./scripts/postinstall.mjs",
     "docker:build": "docker build --build-arg VERSION=$npm_package_version -t ghcr.io/wechat-article/wechat-article-exporter:$npm_package_version .",
@@ -90,7 +96,7 @@
     },
     "files": [
       "apps/web/.output/**/*",
-      "apps/pc/**/*",
+      "apps/electron/**/*",
       "package.json"
     ],
     "win": {

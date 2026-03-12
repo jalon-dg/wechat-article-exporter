@@ -19,7 +19,7 @@
 项目采用 **Monorepo** 结构，按端拆分为 `apps/*` 与共享代码 `packages/*`：
 
 - `apps/web`：Nuxt 3 SPA + Nitro 后端（Node Server 模式）
-- `apps/pc`：Electron 主进程 + 预加载脚本，与 Web 端集成
+- `apps/electron`：Electron 主进程 + 预加载脚本，与 Web 端集成
 - `apps/miniapp-native`：原生微信小程序项目（公众号电子书付费小程序）
 - `packages/shared`：前端与后端共享的工具函数与网络请求封装
 
@@ -29,7 +29,7 @@
 flowchart TD
   browser["apps/web (Nuxt SPA)"]
   nitro["apps/web/server (Nitro API)"]
-  electron["apps/pc (Electron 主进程)"]
+  electron["apps/electron (Electron 主进程)"]
   miniapp["apps/miniapp-native (原生小程序)"]
   db["SQLite: apps/web/data/miniapp.db"]
   wxmp["微信后台 / 公众号接口"]
@@ -141,11 +141,11 @@ flowchart TD
 
 ---
 
-## Electron 桌面端设计（apps/pc）
+## Electron 桌面端设计（apps/electron）
 
 ### 启动与窗口管理
 
-- 主进程入口：`apps/pc/main.ts`（编译为 `main.js`，在 `package.json.main` 中注册）
+- 主进程入口：`apps/electron/main.ts`（编译为 `main.js`，在 `package.json.main` 中注册）
 - 功能点：
   - 窗口状态持久化（`window-state.json`）
   - 系统托盘图标与菜单（隐藏到托盘、双击显示）
@@ -168,7 +168,7 @@ flowchart TD
 
 ### IPC 与预加载脚本
 
-- 预加载脚本：`apps/pc/preload.ts`
+- 预加载脚本：`apps/electron/preload.ts`
   - 使用 `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` 向 renderer 注入安全 API
 - 渲染端类型声明与 Nuxt 插件：`apps/web/plugins/electron.client.ts`
   - 提供 `ElectronAPI` TypeScript 接口
@@ -251,11 +251,11 @@ flowchart TD
 - 构建：
   - `yarn build:electron`：
     - `yarn web:build`
-    - `tsc -p apps/pc/tsconfig.json`
+    - `tsc -p apps/electron/tsconfig.json`
     - `electron-builder` 根据 `package.json.build` 打包
   - 打包文件包含：
     - `apps/web/.output/**/*`
-    - `apps/pc/**/*`
+    - `apps/electron/**/*`
     - 项目 `package.json`
 - 运行：
   - 开发：`yarn dev:electron`（Nuxt dev + Electron TS watch）
