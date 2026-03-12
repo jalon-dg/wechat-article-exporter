@@ -11,6 +11,9 @@ dist-electron
 electron/*.js
 electron/*.js.map
 electron/*.d.ts
+apps/pc/*.js
+apps/pc/*.js.map
+apps/pc/*.d.ts
 
 # Node dependencies
 node_modules
