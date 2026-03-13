@@ -1,0 +1,66 @@
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:else>
+    <!-- 基本信息 -->
+    <view class="section">
+      <view class="section-title">基本信息</view>
+      <view class="info-card">
+        <view class="info-row">
+          <text class="label">公众号名称</text>
+          <text class="value">{{biz.biz_name}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">文章数量</text>
+          <text class="value">{{biz.article_count}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">最后同步</text>
+          <text class="value">{{formatDate(biz.last_sync_at)}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">状态</text>
+          <text class="value status-active">{{biz.status === 'active' ? '正常' : '已失效'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="section">
+      <view class="section-title">操作</view>
+      <view class="actions">
+        <view class="action-btn sync" bindtap="onSyncClick">
+          <text>同步文章</text>
+        </view>
+        <view class="action-btn export" bindtap="onExportClick">
+          <text>导出EPUB</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 任务记录 -->
+    <view class="section">
+      <view class="section-title">任务记录</view>
+      <view wx:if="{{tasks.length === 0}}" class="empty-tasks">
+        <text>暂无任务记录</text>
+      </view>
+      <view wx:else class="task-list">
+        <view
+          wx:for="{{tasks}}"
+          wx:key="id"
+          class="task-item"
+        >
+          <view class="task-info">
+            <text class="task-type">{{getTaskTypeText(item.type)}}</text>
+            <text class="task-time">{{formatDate(item.created_at)}}</text>
+          </view>
+          <view class="task-status" style="color: {{getTaskStatusColor(item.status)}}">
+            {{getTaskStatusText(item.status)}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

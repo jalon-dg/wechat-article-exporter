@@ -1,0 +1,25 @@
+{
+  "name": "wechat-article-exporter-miniapp-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "PORT=3001 nitro dev",
+    "build": "nitro build",
+    "preview": "nitro preview"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dayjs": "^1.11.12",
+    "h3": "^1.13.0",
+    "jszip": "^3.10.1",
+    "nitropack": "^2.9.4",
+    "turndown": "^7.2.0",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "nitro": "^2.9.4",
+    "nuxt": "^3.12.3",
+    "typescript": "^5.5.3",
+    "zod": "^3.23.8"
+  }
+}

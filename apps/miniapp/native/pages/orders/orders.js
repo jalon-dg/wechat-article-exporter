@@ -17,8 +17,10 @@ Page({
 
   async loadOrders() {
     this.setData({ loading: true });
+    console.log('[Orders] Loading orders...');
     try {
       const result = await api.getOrders();
+      console.log('[Orders] Loaded:', result.list?.length || 0, 'orders');
       this.setData({
         orders: result.list || [],
         loading: false,

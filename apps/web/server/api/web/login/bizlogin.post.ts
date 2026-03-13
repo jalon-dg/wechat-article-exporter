@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { request } from '#shared/utils/request';
 import { getCookieFromResponse, getCookiesFromRequest } from '~/server/utils/CookieStore';
 import { proxyMpRequest } from '~/server/utils/proxy-request';
+import { setMpCookie } from '~/server/kv/cookie';
 
 export default defineEventHandler(async event => {
   const cookie = getCookiesFromRequest(event);
@@ -37,6 +38,20 @@ export default defineEventHandler(async event => {
     return {
       err: '登录失败，请稍后重试',
     };
+  }
+
+  // 同时保存到 "default" key，方便task-processor读取
+  const { cookieStore } = await import('~/server/utils/CookieStore');
+  const token = await cookieStore.getToken(authKey);
+  const cookieStr = await cookieStore.getCookie(authKey);
+  if (token && cookieStr) {
+    // 解析cookie字符串为对象数组
+    const cookies = cookieStr.split(';').map(c => {
+      const [name, ...valueParts] = c.trim().split('=');
+      return { name, value: valueParts.join('=') };
+    });
+    await setMpCookie('default', { token, cookies });
+    console.log('[Login] Saved token to default key for task-processor');
   }
 
   const { nick_name, head_img } = await request(`/api/web/mp/info`, {

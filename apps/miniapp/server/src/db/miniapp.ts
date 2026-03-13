@@ -1,8 +1,13 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
 import { mkdirSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const DB_DIR = join(process.cwd(), 'data');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DB_DIR = join(__dirname, '../../data');
 if (!existsSync(DB_DIR)) {
   mkdirSync(DB_DIR, { recursive: true });
 }

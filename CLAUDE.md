@@ -15,7 +15,7 @@ Supports downloading articles in multiple formats: HTML (100% preserves original
 - **Database**: better-sqlite3 (local SQLite)
 - **Server**: Nitro (server-side rendering disabled - SPA mode)
 - **Grid**: AG Grid Enterprise
-- **Mini-program**: Native WeChat mini-program (`miniprogram-native/`)
+- **Mini-program**: Native WeChat mini-program (`apps/miniapp/native/`) with separate server (`apps/miniapp/server/`)
 - **Node**: Requires Node.js >= 22
 
 ## Commands
@@ -25,11 +25,15 @@ Supports downloading articles in multiple formats: HTML (100% preserves original
 yarn dev              # Start Nuxt dev server (localhost:3000)
 yarn dev:electron     # Start with Electron (Nuxt + Electron watch mode)
 yarn electron:start  # Run Electron desktop app in dev mode
+yarn miniapp:dev      # Start miniapp server (localhost:3001)
+yarn miniapp:native:dev  # Start miniapp native dev (weixin devtools)
 
 # Building
 yarn build           # Production build for Nuxt
 yarn build:electron  # Build Nuxt + compile Electron + package desktop app
 yarn build:electron:win  # Build for Windows (NSIS installer)
+yarn miniapp:build   # Build miniapp server
+yarn miniapp:native:build  # Build miniapp native
 yarn preview         # Preview Cloudflare Pages build locally
 
 # Code quality
@@ -45,23 +49,20 @@ yarn docker:publish  # Push to GitHub Container Registry
 
 ```
 wechat-article-exporter/
-├── server/
-│   ├── api/           # Nitro server API endpoints
-│   │   ├── public/    # Public article search/download APIs
-│   │   ├── web/       # Web scraping and WeChat APIs
-│   │   └── miniapp/   # Mini-program order APIs
-│   ├── db/            # Database (better-sqlite3)
-│   ├── services/      # Business logic (task-processor.ts)
-│   └── utils/         # Server utilities
-├── pages/             # Nuxt pages (dashboard, dev, index)
-├── components/        # Vue components (organized by feature)
-├── composables/       # Vue composables
-├── miniprogram-native/ # WeChat mini-program (native)
-├── miniprogram/       # Taro-based mini-program (legacy/inactive)
-├── utils/             # Client-side utilities
-├── shared/            # Shared code
-├── types/             # TypeScript type definitions
-└── test/              # Test files
+├── apps/
+│   ├── web/           # Nuxt Web应用（前端 + 后端API）
+│   │   ├── pages/         # Vue页面
+│   │   ├── components/   # Vue组件
+│   │   ├── composables/   # Vue composables
+│   │   └── server/        # Nitro API (web端API)
+│   ├── electron/      # Electron桌面客户端 (Vite + Vue 3)
+│   └── miniapp/       # 微信小程序项目
+│       ├── native/    # 小程序前端 (原生)
+│       └── server/    # 小程序后端 (Nitro, 端口3001)
+├── packages/          # 共享包
+├── utils/             # 客户端工具
+├── types/             # TypeScript类型定义
+└── test/              # 测试文件
 ```
 
 ## Architecture Notes
@@ -78,13 +79,13 @@ wechat-article-exporter/
 ## Key Patterns
 
 1. **API Endpoints**: File-based routing in `server/api/[feature]/[method].ts`
-   - `server/api/public/v1/` - Public article search/download APIs
-   - `server/api/web/mp/` - WeChat account login and article scraping
-   - `server/api/web/login/` - WeChat QR code login flow
-   - `server/api/miniapp/` - Mini-program payment and task APIs
-2. **Vue Components**: Feature-based organization in `components/`
-3. **Database**: SQLite stored in `server/db/`, accessed via better-sqlite3
-4. **Mini-program**: Native WeChat mini-program in `miniprogram-native/` with separate payment/order flow
+   - `apps/web/server/api/public/v1/` - Public article search/download APIs
+   - `apps/web/server/api/web/mp/` - WeChat account login and article scraping
+   - `apps/web/server/api/web/login/` - WeChat QR code login flow
+   - `apps/miniapp/server/src/api/miniapp/` - Mini-program payment and task APIs (独立服务, 端口3001)
+2. **Vue Components**: Feature-based organization in `apps/web/components/`
+3. **Database**: SQLite stored in `apps/web/server/db/`, accessed via better-sqlite3
+4. **Mini-program**: Native WeChat mini-program in `apps/miniapp/native/` with separate server `apps/miniapp/server/`
 5. **Environment**: Uses `.env.example` for configuration template
    - `NITRO_KV_DRIVER`: Storage backend (memory/fs/cloudflare-kv-binding)
    - `NUXT_AGGRID_LICENSE`: AG Grid Enterprise license

@@ -1,0 +1,42 @@
+<view class="container">
+  <view wx:if="{{loading && bizList.length === 0}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <view wx:elif="{{bizList.length === 0}}" class="empty">
+    <text>暂无已购公众号</text>
+    <text class="empty-tip">在首页搜索并购买公众号后，可以在这里查看</text>
+  </view>
+
+  <view wx:else class="biz-list">
+    <view
+      wx:for="{{bizList}}"
+      wx:key="id"
+      class="biz-item"
+      bindtap="onBizClick"
+      data-id="{{item.id}}"
+      data-bizname="{{item.biz_name}}"
+    >
+      <view class="biz-info">
+        <text class="biz-name">{{item.biz_name}}</text>
+        <text class="biz-meta">文章数: {{item.article_count}} | 最后同步: {{formatDate(item.last_sync_at)}}</text>
+      </view>
+      <view class="biz-actions">
+        <view
+          class="action-btn sync"
+          catchtap="onSyncClick"
+          data-id="{{item.id}}"
+        >
+          <text>同步</text>
+        </view>
+        <view
+          class="action-btn export"
+          catchtap="onExportClick"
+          data-id="{{item.id}}"
+        >
+          <text>导出</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

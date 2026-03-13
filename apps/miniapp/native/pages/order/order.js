@@ -42,7 +42,9 @@ Page({
 
     const doPoll = async () => {
       try {
+        console.log(`[Progress] Polling order status: ${this.data.orderId}`);
         const result = await api.getOrderStatus(this.data.orderId);
+        console.log(`[Progress] Order status: ${result.status}`, result.tasks);
         this.setData({
           status: result.status,
           tasks: result.tasks,
@@ -62,7 +64,7 @@ Page({
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error(`[Progress] Poll error:`, e);
       }
     };
 
@@ -78,15 +80,17 @@ Page({
 
   async handlePay() {
     this.setData({ loading: true });
+    console.log(`[Payment] Processing payment for order: ${this.data.orderId}`);
     try {
       await api.paymentCallback({
         orderId: this.data.orderId,
         paymentTime: Date.now(),
       });
+      console.log(`[Payment] Success, orderId: ${this.data.orderId}`);
       wx.showToast({ title: '支付成功', icon: 'success' });
       this.pollStatus();
     } catch (e) {
-      console.error(e);
+      console.error(`[Payment] Error:`, e);
     } finally {
       this.setData({ loading: false });
     }

@@ -1,6 +1,6 @@
 {
   "libVersion": "3.14.3",
-  "projectname": "miniprogram-native",
+  "projectname": "miniapp-native",
   "setting": {
     "urlCheck": false,
     "coverView": true,

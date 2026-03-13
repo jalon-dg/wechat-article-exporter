@@ -1,8 +1,11 @@
-const API_BASE = 'http://10.191.116.72:3000';
+// 小程序后端API地址
+// 开发环境使用 miniapp-server (默认端口3001)，生产环境使用独立服务器
+const API_BASE = 'http://127.0.0.1:3001';
 
 function request(options) {
   const { url, method = 'GET', data } = options;
   const fullUrl = url.startsWith('http') ? url : API_BASE + url;
+  console.log(`[API] ${method} ${fullUrl}`, data || '');
 
   return new Promise((resolve, reject) => {
     wx.request({
@@ -13,9 +16,11 @@ function request(options) {
         'Content-Type': 'application/json',
       },
       success: res => {
+        console.log(`[API Response] ${res.statusCode}`, res.data);
         if (res.statusCode === 200) {
           const response = res.data;
           if (response.code === 0) {
+            console.log(`[API Success]`, response.data);
             resolve(response.data);
           } else {
             wx.showToast({
@@ -33,6 +38,7 @@ function request(options) {
         }
       },
       fail: err => {
+        console.error(`[API Error]`, err);
         wx.showToast({
           title: '请求失败',
           icon: 'none',
@@ -77,5 +83,35 @@ module.exports = {
     request({
       url: '/api/miniapp/process-tasks',
       method: 'POST',
+    }),
+
+  // 用户公众号相关API
+  getUserBizList: userId =>
+    request({
+      url: `/api/miniapp/user-biz-list?userId=${encodeURIComponent(userId)}`,
+    }),
+
+  getUserBizDetail: id =>
+    request({
+      url: `/api/miniapp/user-biz-detail?id=${encodeURIComponent(id)}`,
+    }),
+
+  syncUserBiz: userBizId =>
+    request({
+      url: '/api/miniapp/user-biz-sync',
+      method: 'POST',
+      data: { userBizId },
+    }),
+
+  exportUserBiz: userBizId =>
+    request({
+      url: '/api/miniapp/user-biz-export',
+      method: 'POST',
+      data: { userBizId },
+    }),
+
+  getUserBizTask: taskId =>
+    request({
+      url: `/api/miniapp/user-biz-task?taskId=${encodeURIComponent(taskId)}`,
     }),
 };

@@ -38,6 +38,8 @@ design
 docs
 samples/**/output
 
+*.db
+
 # Local env files
 .env
 .env.*
@@ -45,3 +47,6 @@ samples/**/output
 
 # wrangler
 .wrangler
+
+# SQLite databases
+apps/miniapp-server/data/*.db

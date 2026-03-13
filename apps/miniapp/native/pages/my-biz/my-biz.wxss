@@ -1,0 +1,83 @@
+.container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx;
+  color: #999;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx;
+  color: #666;
+}
+
+.empty-tip {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.biz-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.biz-item {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.biz-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  flex: 1;
+}
+
+.biz-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.biz-meta {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.biz-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
+  padding: 16rpx 30rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.action-btn.sync {
+  background-color: #1989fa;
+  color: #fff;
+}
+
+.action-btn.export {
+  background-color: #07c160;
+  color: #fff;
+}

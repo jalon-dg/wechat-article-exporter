@@ -2,7 +2,9 @@
   "pages": [
     "pages/index/index",
     "pages/order/order",
-    "pages/orders/orders"
+    "pages/orders/orders",
+    "pages/my-biz/my-biz",
+    "pages/my-biz-detail/my-biz-detail"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -22,6 +24,10 @@
       {
         "pagePath": "pages/orders/orders",
         "text": "订单"
+      },
+      {
+        "pagePath": "pages/my-biz/my-biz",
+        "text": "我的公众号"
       }
     ]
   },
