@@ -1,7 +1,7 @@
 /**
  * 查询订单状态
  */
-import { getOrderStatus } from '../services/task-processor';
+import { getOrderStatus } from '../../services/task-processor';
 
 interface OrderStatusQuery {
   orderId: string;

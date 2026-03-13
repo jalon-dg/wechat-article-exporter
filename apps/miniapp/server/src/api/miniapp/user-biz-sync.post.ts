@@ -1,8 +1,8 @@
 /**
  * 触发同步公众号文章
  */
-import { getUserBiz, createUserBizTask, getUserBizTasksByUserBizId } from '../db/miniapp';
-import { processUserBizTaskQueue } from '../services/task-processor';
+import { getUserBiz, createUserBizTask, getUserBizTasksByUserBizId } from '../../db/miniapp';
+import { processUserBizTaskQueue } from '../../services/task-processor';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 

@@ -1,7 +1,7 @@
 /**
  * 获取订单列表
  */
-import { getAllOrders } from '../db/miniapp';
+import { getAllOrders } from '../../db/miniapp';
 
 export default defineEventHandler(async () => {
   try {

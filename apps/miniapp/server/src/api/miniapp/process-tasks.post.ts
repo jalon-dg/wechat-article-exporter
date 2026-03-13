@@ -2,7 +2,7 @@
  * 任务调度接口
  * 用于触发任务处理（可在定时任务或手动调用）
  */
-import { processTaskQueue } from '../services/task-processor';
+import { processTaskQueue } from '../../services/task-processor';
 
 export default defineEventHandler(async () => {
   try {

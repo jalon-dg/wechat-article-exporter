@@ -1,7 +1,7 @@
 /**
  * 查询用户公众号任务状态
  */
-import { getUserBizTask } from '../db/miniapp';
+import { getUserBizTask } from '../../db/miniapp';
 import { z } from 'zod';
 
 const querySchema = z.object({

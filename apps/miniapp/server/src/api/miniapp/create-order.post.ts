@@ -1,7 +1,7 @@
 /**
  * 创建订单
  */
-import { createMiniappOrder } from '../services/task-processor';
+import { createMiniappOrder } from '../../services/task-processor';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({

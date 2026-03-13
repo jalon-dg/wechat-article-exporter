@@ -1,7 +1,7 @@
 /**
  * 搜索公众号接口
  */
-import { searchBiz } from '../services/task-processor';
+import { searchBiz } from '../../services/task-processor';
 
 interface SearchBizQuery {
   keyword: string;
