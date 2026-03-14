@@ -1,13 +1,8 @@
 import Database from 'better-sqlite3';
+import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { mkdirSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const DB_DIR = join(__dirname, '../../data');
+const DB_DIR = join(process.cwd(), 'data');
 if (!existsSync(DB_DIR)) {
   mkdirSync(DB_DIR, { recursive: true });
 }
@@ -219,9 +214,7 @@ export function getPendingTasks(type?: Task['type']): Task[] {
 }
 
 // 用户公众号操作
-export function createUserBiz(
-  userBiz: Omit<UserBiz, 'created_at' | 'updated_at'> & { created_at: number }
-): UserBiz {
+export function createUserBiz(userBiz: Omit<UserBiz, 'created_at' | 'updated_at'> & { created_at: number }): UserBiz {
   const stmt = db.prepare(`
     INSERT INTO user_biz (id, user_id, biz_name, biz_fakeid, email, order_id, last_sync_at, article_count, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -265,9 +258,7 @@ export function deleteUserBiz(id: string): void {
 }
 
 // 用户公众号任务操作
-export function createUserBizTask(
-  task: Omit<UserBizTask, 'updated_at'> & { created_at: number }
-): UserBizTask {
+export function createUserBizTask(task: Omit<UserBizTask, 'updated_at'> & { created_at: number }): UserBizTask {
   const stmt = db.prepare(`
     INSERT INTO user_biz_tasks (id, user_biz_id, type, status, progress, result, error, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)

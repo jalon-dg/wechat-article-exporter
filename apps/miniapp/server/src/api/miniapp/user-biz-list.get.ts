@@ -1,8 +1,9 @@
 /**
  * 获取用户已购公众号列表
  */
-import { getUserBizByUserId } from '../../db/miniapp';
+
 import { z } from 'zod';
+import { getUserBizByUserId } from '../../db/miniapp';
 
 const querySchema = z.object({
   userId: z.string().min(1),

@@ -1,8 +1,9 @@
 /**
  * 获取公众号详情
  */
-import { getUserBiz, getUserBizTasksByUserBizId } from '../../db/miniapp';
+
 import { z } from 'zod';
+import { getUserBiz, getUserBizTasksByUserBizId } from '../../db/miniapp';
 
 const querySchema = z.object({
   id: z.string().min(1),

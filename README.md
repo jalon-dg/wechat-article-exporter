@@ -32,6 +32,25 @@
 该工具的使用教程已移至 [文档站点](https://docs.mptext.top)。
 
 
+## :wrench: 开发命令速查
+
+按场景用下面几条即可，其余脚本见 `package.json` 的 `scripts`。
+
+| 我想… | 执行 |
+|--------|------|
+| **跑 Web 用户端**（在线站本地） | `yarn dev` → http://localhost:3000 |
+| **跑桌面应用**（Electron 客户端 + 管理端） | `yarn app:dev` → 客户端 5173，管理端 30001 |
+| **跑小程序后端** | `yarn miniapp:dev` → http://localhost:3001 |
+| **只跑桌面客户端**（Vite） | `yarn app:client:dev` |
+| **只跑桌面管理端** | `yarn app:server:dev` → http://localhost:30001 |
+| **构建 Web 生产包** | `yarn build` |
+| **构建桌面应用** | `yarn app:build` |
+| **打 Windows 安装包** | `yarn app:build:win` |
+| **代码格式化** | `yarn format` |
+
+端口约定：Web **3000** · 小程序后端 **3001** · 桌面管理端 **30001** · 桌面客户端 Vite **5173**。
+
+
 ## :dart: 特性
 
 - [x] 搜索公众号，支持关键字搜索

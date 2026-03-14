@@ -479,7 +479,12 @@ export class Exporter extends BaseDownloader {
     imagesFolder.file('cover.svg', coverSvg, { compression: 'DEFLATE' });
 
     const escapeXml = (s: string) =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+      s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
 
     // 将一行 Markdown 文本里的 **加粗** 转成 <strong> 标签，其余内容正常转义
     const inlineMarkdownToHtml = (text: string): string => {
@@ -557,15 +562,19 @@ export class Exporter extends BaseDownloader {
       if (htmlContent) {
         markdown = turndownService.turndown(htmlContent);
         // 删除所有图片：![alt](url) 或 ![alt](url "title")
-        markdown = markdown.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\n{3,}/g, '\n\n').trim();
+        markdown = markdown
+          .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
       }
       if (!markdown) {
         markdown = '（该文章内容无法导出）';
       }
       const contentHtml = markdownToSimpleHtml(markdown);
 
-      const title = (article.title || '无标题').replace(/[<>"&]/g, c =>
-        ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' })[c]!
+      const title = (article.title || '无标题').replace(
+        /[<>"&]/g,
+        c => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' })[c]!
       );
       chapterTitles.push(title);
       const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -609,10 +618,7 @@ ${contentHtml}
     <h1>目录</h1>
     <ol>
 ${chapterTitles
-  .map(
-    (t, index) =>
-      `      <li><a href="Text/chapter_${String(index + 1).padStart(3, '0')}.xhtml">${t}</a></li>`
-  )
+  .map((t, index) => `      <li><a href="Text/chapter_${String(index + 1).padStart(3, '0')}.xhtml">${t}</a></li>`)
   .join('\n')}
     </ol>
   </nav>
@@ -1119,15 +1125,11 @@ ${commentHTML}
     if (window.electronAPI && typeof this.exportRootDirectoryHandle === 'string') {
       // Electron 模式：使用 fs API 写入文件
       const basePath = this.exportRootDirectoryHandle as string;
-      const fullPath = path.includes('/') || path.includes('\\')
-        ? path
-        : `${basePath}/${path}`;
+      const fullPath = path.includes('/') || path.includes('\\') ? path : `${basePath}/${path}`;
 
       // 将 Blob 转换为 base64
       const arrayBuffer = await file.arrayBuffer();
-      const base64 = btoa(
-        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-      );
+      const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
 
       const result = await window.electronAPI.writeFileFromBlob(fullPath, base64, file.type);
       if (!result.success) {

@@ -12,9 +12,7 @@ const config: UserConfigExport = {
   },
   sourceRoot: 'src',
   outputRoot: 'dist',
-  plugins: [
-    '@tarojs/plugin-platform-h5',
-  ],
+  plugins: ['@tarojs/plugin-platform-h5'],
   framework: 'react',
   h5: {
     publicPath: '/',

@@ -1,40 +1,45 @@
-import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
+import type { H3Event } from 'h3';
+import JSZip from 'jszip';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import JSZip from 'jszip';
-import dayjs from 'dayjs';
 import TurndownService from 'turndown';
+import { v4 as uuidv4 } from 'uuid';
 import {
   createOrder,
-  getOrder,
-  updateOrder,
   createTask,
-  getTask,
-  updateTask,
-  getPendingTasks,
-  getTasksByOrderId,
   createUserBiz,
-  getUserBiz,
-  updateUserBiz,
   createUserBizTask,
-  getUserBizTask,
-  updateUserBizTask,
+  getOrder,
+  getPendingTasks,
   getPendingUserBizTasks,
+  getTask,
+  getTasksByOrderId,
+  getUserBiz,
+  getUserBizTask,
   type Order,
   type Task,
   type UserBiz,
-} from '../db/miniapp';
-import { proxyMpRequest } from '../utils/proxy-request';
-import { getMpCookie } from '../kv/cookie';
+  updateOrder,
+  updateTask,
+  updateUserBiz,
+  updateUserBizTask,
+} from '~/server/db/miniapp';
+import { getMpCookie } from '~/server/kv/cookie';
+import { AccountCookie, getTokenFromStore } from '~/server/utils/CookieStore';
+import { proxyMpRequest } from '~/server/utils/proxy-request';
 
 // 从KV存储中获取已保存的微信登录信息
-export async function getWechatToken(): Promise<{ token: string; cookieStr: string } | null> {
+async function getWechatToken(): Promise<{ token: string; cookieStr: string } | null> {
+  // 尝试从KV中获取默认的登录信息
+  // 网页版扫码登录后，token会保存在KV中
   const kvKeys = ['default', 'auth-key', 'wechat-default'];
 
   for (const key of kvKeys) {
     const cookieData = await getMpCookie(key);
     if (cookieData && cookieData.token) {
       console.log(`[WeChat] Found token for key: ${key}`);
+      // 将cookies数组转换为cookie字符串
       const cookieStr = cookieData.cookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
       return {
         token: cookieData.token,
@@ -48,10 +53,12 @@ export async function getWechatToken(): Promise<{ token: string; cookieStr: stri
 }
 
 // 搜索公众号
-export async function searchBiz(keyword: string) {
+export async function searchBiz(keyword: string, event: H3Event) {
   try {
     const token = await getWechatToken();
     if (!token) {
+      // 使用公开 API 搜索（如果有的话）
+      // 这里先返回模拟数据，实际需要真实的 token
       return {
         base_resp: { ret: -1, err_msg: '服务暂未开放，请联系管理员' },
       };
@@ -62,13 +69,14 @@ export async function searchBiz(keyword: string) {
       begin: 0,
       count: 5,
       query: keyword,
-      token: token.token,
+      token,
       lang: 'zh_CN',
       f: 'json',
       ajax: '1',
     };
 
     return proxyMpRequest({
+      event,
       method: 'GET',
       endpoint: 'https://mp.weixin.qq.com/cgi-bin/searchbiz',
       query: params,
@@ -101,6 +109,7 @@ export function createMiniappOrder(bizName: string, email: string, price: number
 
   createOrder(order);
 
+  // 创建初始任务
   createTask({
     id: uuidv4(),
     order_id: orderId,
@@ -120,11 +129,14 @@ export function handlePaymentCallback(orderId: string, paymentTime: number): Ord
   const order = getOrder(orderId);
   if (!order) return null;
 
+  // 更新订单状态
   updateOrder(orderId, {
     status: 'paid',
     pay_time: paymentTime,
   });
 
+  // 这里不要把任务提前标记为 processing：
+  // 实际执行由 processTaskQueue() 从 pending 拉起（否则会导致队列永远不处理）
   updateOrder(orderId, { status: 'processing' });
 
   return getOrder(orderId) || null;
@@ -161,6 +173,7 @@ async function generateEpub(
   const chapterTitles: string[] = [];
   const bookTitle = bizName.replace(/[<>"&]/g, c => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;' })[c]!);
 
+  // 生成封面
   const imagesFolder = oebps.folder('Images')!;
   const coverSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2560">
@@ -227,6 +240,7 @@ async function generateEpub(
     return htmlLines.join('\n');
   };
 
+  // 按时间倒序
   articles.sort((a, b) => b.update_time - a.update_time);
 
   for (let i = 0; i < articles.length; i++) {
@@ -334,11 +348,14 @@ ${spineItems.join('\n')}
 
 // 发送邮件（模拟实现）
 async function sendEmail(email: string, subject: string, content: string, attachments?: Buffer[]) {
+  // 这里应该集成真实的邮件发送服务
+  // 例如 nodemailer、SendGrid、Aliyun 邮件推送等
   console.log(`[Email] Sending to ${email}: ${subject}`);
+  // 模拟发送成功
   return true;
 }
 
-// 处理任务队列
+// 处理任务队列（循环处理直到没有待处理任务）
 export async function processTaskQueue() {
   let processed = true;
 
@@ -357,22 +374,21 @@ export async function processTaskQueue() {
         const order = getOrder(task.order_id);
         if (!order) {
           updateTask(task.id, { status: 'failed', error: 'Order not found' });
-          updateOrder(task.order_id, { status: 'failed', error: 'Order not found' });
           continue;
         }
 
         if (task.type === 'fetch_articles') {
           console.log(`[Fetch] Starting for order ${task.order_id}, biz: ${order.biz_name}`);
 
-          // 检查微信 token
+          // 获取微信登录信息
           const wechatAuth = await getWechatToken();
           if (!wechatAuth) {
             console.error('[Fetch] No WeChat token found. Please login via web first!');
             updateTask(task.id, { status: 'failed', error: '请先在网页版扫码登录微信' });
-            updateOrder(task.order_id, { status: 'failed', error: '请先在网页版扫码登录微信' });
             continue;
           }
 
+          // 1. 搜索公众号获取 fakeid
           console.log(`[Fetch] Searching biz: ${order.biz_name}`);
           const searchParams = {
             action: 'search_biz',
@@ -387,7 +403,9 @@ export async function processTaskQueue() {
 
           let searchResp;
           try {
+            // 创建一个模拟的event来调用proxyMpRequest
             searchResp = await proxyMpRequest({
+              event: {} as H3Event, // 空event，只用cookie参数
               method: 'GET',
               endpoint: 'https://mp.weixin.qq.com/cgi-bin/searchbiz',
               query: searchParams,
@@ -399,7 +417,13 @@ export async function processTaskQueue() {
           }
 
           let fakeid = null;
-          if (searchResp && searchResp.base_resp && searchResp.base_resp.ret === 0 && searchResp.list && searchResp.list.length > 0) {
+          if (
+            searchResp &&
+            searchResp.base_resp &&
+            searchResp.base_resp.ret === 0 &&
+            searchResp.list &&
+            searchResp.list.length > 0
+          ) {
             fakeid = searchResp.list[0].fakeid;
             console.log(`[Fetch] Found fakeid: ${fakeid}`);
           } else {
@@ -409,6 +433,7 @@ export async function processTaskQueue() {
           let articles: any[] = [];
 
           if (fakeid) {
+            // 2. 获取文章列表
             console.log(`[Fetch] Fetching articles for fakeid: ${fakeid}`);
             const articleParams = {
               sub: 'list',
@@ -429,6 +454,7 @@ export async function processTaskQueue() {
             let articleResp;
             try {
               articleResp = await proxyMpRequest({
+                event: {} as H3Event,
                 method: 'GET',
                 endpoint: 'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
                 query: articleParams,
@@ -449,6 +475,7 @@ export async function processTaskQueue() {
                 });
               console.log(`[Fetch] Got ${articles.length} articles, fetching content...`);
 
+              // 3. 获取每篇文章的详细内容
               for (let i = 0; i < articles.length; i++) {
                 const article = articles[i];
                 if (article.link) {
@@ -456,12 +483,14 @@ export async function processTaskQueue() {
                     console.log(`[Fetch] Fetching article ${i + 1}/${articles.length}: ${article.title}`);
                     const contentResp = await fetch(article.link, {
                       headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Cookie': wechatAuth.cookieStr,
+                        'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        Cookie: wechatAuth.cookieStr,
                       },
                     });
                     const html = await contentResp.text();
 
+                    // 提取文章内容（简化处理：提取body内的HTML）
                     const contentMatch = html.match(/<div class="rich_media_content "[^>]*>([\s\S]*?)<\/div>/);
                     const content = contentMatch ? contentMatch[1] : '<p>无法获取文章内容</p>';
 
@@ -482,6 +511,7 @@ export async function processTaskQueue() {
             }
           }
 
+          // 如果没有获取到文章，使用示例数据
           if (articles.length === 0) {
             console.log('[Fetch] Using demo articles (no real articles found)');
             articles = [
@@ -490,6 +520,7 @@ export async function processTaskQueue() {
             ];
           }
 
+          // 创建下一个任务
           createTask({
             id: uuidv4(),
             order_id: task.order_id,
@@ -510,6 +541,7 @@ export async function processTaskQueue() {
           const epubBuffer = await generateEpub(task.order_id, order.biz_name, articles);
           console.log(`[EPUB] Buffer size: ${epubBuffer.length} bytes`);
 
+          // 保存文件路径或上传到云存储
           const filePath = join(tmpdir(), `${order.id}.epub`);
           console.log(`[EPUB] Saving to: ${filePath}`);
           const { writeFileSync } = await import('fs');
@@ -534,7 +566,6 @@ export async function processTaskQueue() {
           if (!filePath) {
             console.error(`[Email] File path is null for order ${task.order_id}`);
             updateTask(task.id, { status: 'failed', error: '文件路径不存在' });
-            updateOrder(task.order_id, { status: 'failed', error: '文件路径不存在' });
             continue;
           }
           console.log(`[Email] Reading file: ${filePath}`);
@@ -562,13 +593,8 @@ export async function processTaskQueue() {
   }
 }
 
-// 创建用户公众号关联
-export function createUserBizRelation(
-  userId: string,
-  bizName: string,
-  email: string,
-  orderId: string
-): UserBiz {
+// 创建用户公众号关联（支付成功后调用）
+export function createUserBizRelation(userId: string, bizName: string, email: string, orderId: string): UserBiz {
   const userBiz: UserBiz = {
     id: uuidv4(),
     user_id: userId,
@@ -585,6 +611,7 @@ export function createUserBizRelation(
 
   createUserBiz(userBiz);
 
+  // 创建首次同步任务
   createUserBizTask({
     id: uuidv4(),
     user_biz_id: userBiz.id,
@@ -624,6 +651,7 @@ export async function processUserBizTaskQueue() {
         if (task.type === 'sync_articles') {
           console.log(`[UserBizTask] Syncing articles for ${userBiz.biz_name}`);
 
+          // 获取微信登录信息
           const wechatAuth = await getWechatToken();
           if (!wechatAuth) {
             console.error('[UserBizTask] No WeChat token found');
@@ -631,6 +659,7 @@ export async function processUserBizTaskQueue() {
             continue;
           }
 
+          // 1. 搜索公众号获取 fakeid
           const searchParams = {
             action: 'search_biz',
             begin: 0,
@@ -645,6 +674,7 @@ export async function processUserBizTaskQueue() {
           let searchResp;
           try {
             searchResp = await proxyMpRequest({
+              event: {} as H3Event,
               method: 'GET',
               endpoint: 'https://mp.weixin.qq.com/cgi-bin/searchbiz',
               query: searchParams,
@@ -656,15 +686,24 @@ export async function processUserBizTaskQueue() {
           }
 
           let fakeid = userBiz.biz_fakeid;
-          if (!fakeid && searchResp && searchResp.base_resp && searchResp.base_resp.ret === 0 && searchResp.list && searchResp.list.length > 0) {
+          if (
+            !fakeid &&
+            searchResp &&
+            searchResp.base_resp &&
+            searchResp.base_resp.ret === 0 &&
+            searchResp.list &&
+            searchResp.list.length > 0
+          ) {
             fakeid = searchResp.list[0].fakeid;
             console.log(`[UserBizTask] Found fakeid: ${fakeid}`);
+            // 更新 fakeid
             updateUserBiz(userBiz.id, { biz_fakeid: fakeid });
           }
 
           let articles: any[] = [];
 
           if (fakeid) {
+            // 2. 获取文章列表
             const articleParams = {
               sub: 'list',
               search_field: 'null',
@@ -684,6 +723,7 @@ export async function processUserBizTaskQueue() {
             let articleResp;
             try {
               articleResp = await proxyMpRequest({
+                event: {} as H3Event,
                 method: 'GET',
                 endpoint: 'https://mp.weixin.qq.com/cgi-bin/appmsgpublish',
                 query: articleParams,
@@ -704,6 +744,7 @@ export async function processUserBizTaskQueue() {
                 });
               console.log(`[UserBizTask] Got ${articles.length} articles`);
 
+              // 3. 获取每篇文章的详细内容
               for (let i = 0; i < articles.length; i++) {
                 const article = articles[i];
                 if (article.link) {
@@ -711,8 +752,9 @@ export async function processUserBizTaskQueue() {
                     console.log(`[UserBizTask] Fetching article ${i + 1}/${articles.length}: ${article.title}`);
                     const contentResp = await fetch(article.link, {
                       headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Cookie': wechatAuth.cookieStr,
+                        'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        Cookie: wechatAuth.cookieStr,
                       },
                     });
                     const html = await contentResp.text();
@@ -736,6 +778,7 @@ export async function processUserBizTaskQueue() {
             }
           }
 
+          // 如果没有获取到文章，使用示例数据
           if (articles.length === 0) {
             console.log('[UserBizTask] Using demo articles (no real articles found)');
             articles = [
@@ -744,17 +787,20 @@ export async function processUserBizTaskQueue() {
             ];
           }
 
+          // 更新用户公众号信息
           updateUserBiz(userBiz.id, {
             last_sync_at: Date.now(),
             article_count: articles.length,
           });
 
+          // 保存文章到任务结果
           updateUserBizTask(task.id, {
             status: 'completed',
             progress: 100,
             result: JSON.stringify(articles),
           });
 
+          // 自动创建导出任务
           createUserBizTask({
             id: uuidv4(),
             user_biz_id: userBiz.id,
@@ -783,6 +829,7 @@ export async function processUserBizTaskQueue() {
             result: filePath,
           });
 
+          // 创建发送邮件任务
           createUserBizTask({
             id: uuidv4(),
             user_biz_id: userBiz.id,

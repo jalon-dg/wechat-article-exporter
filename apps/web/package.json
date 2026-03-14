@@ -10,4 +10,3 @@
     "preview": "NITRO_PRESET=cloudflare_pages nuxt build && npx wrangler --cwd dist pages dev"
   }
 }
-

@@ -79,9 +79,7 @@ export async function export2ExcelFile(data: ExcelExportEntity[], filename: stri
       throw new Error('用户取消保存');
     }
     const arrayBuffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
+    const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
     const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
     if (!writeResult.success) {
       throw new Error(`保存文件失败: ${writeResult.error}`);
@@ -106,9 +104,7 @@ export async function export2JsonFile(data: ExcelExportEntity[], filename: strin
       throw new Error('用户取消保存');
     }
     const arrayBuffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
+    const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
     const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
     if (!writeResult.success) {
       throw new Error(`保存文件失败: ${writeResult.error}`);
@@ -133,9 +129,7 @@ export async function exportAccountJsonFile(data: AccountManifest, filename: str
       throw new Error('用户取消保存');
     }
     const arrayBuffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
+    const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
     const writeResult = await window.electronAPI.writeFileFromBlob(result.filePath, base64, blob.type);
     if (!writeResult.success) {
       throw new Error(`保存文件失败: ${writeResult.error}`);

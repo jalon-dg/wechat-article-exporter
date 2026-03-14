@@ -4,11 +4,13 @@ import { fileURLToPath } from 'node:url';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-10-30',
+  devServer: {
+    port: 3000, // Web 用户端固定端口，与 desktop/miniapp 区分
+  },
   devtools: {
     enabled: false,
   },
   modules: ['@vueuse/nuxt', '@nuxt/ui', 'nuxt-monaco-editor', '@sentry/nuxt/module', 'nuxt-umami'],
-  plugins: ['~/plugins/electron.client.ts'],
   alias: {
     '#shared': resolve(dirname(fileURLToPath(import.meta.url)), '../../packages/shared'),
   },
@@ -21,6 +23,8 @@ export default defineNuxtConfig({
       },
     },
     debugMpRequest: false,
+    managerUsername: process.env.MANAGER_USERNAME,
+    managerPassword: process.env.MANAGER_PASSWORD,
   },
   app: {
     head: {

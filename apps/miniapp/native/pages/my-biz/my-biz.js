@@ -63,7 +63,8 @@ Page({
     console.log('[MyBiz] Sync biz:', id);
     wx.showLoading({ title: '正在同步...' });
 
-    api.syncUserBiz(id)
+    api
+      .syncUserBiz(id)
       .then(result => {
         wx.hideLoading();
         if (result.code === 0) {
@@ -92,7 +93,8 @@ Page({
       }
 
       pollCount++;
-      api.getUserBizTask(taskId)
+      api
+        .getUserBizTask(taskId)
         .then(result => {
           if (result.task) {
             const task = result.task;
@@ -123,7 +125,8 @@ Page({
     console.log('[MyBiz] Export biz:', id);
     wx.showLoading({ title: '正在导出...' });
 
-    api.exportUserBiz(id)
+    api
+      .exportUserBiz(id)
       .then(result => {
         wx.hideLoading();
         if (result.code === 0) {
@@ -152,7 +155,8 @@ Page({
       }
 
       pollCount++;
-      api.getUserBizTask(taskId)
+      api
+        .getUserBizTask(taskId)
         .then(result => {
           if (result.task) {
             const task = result.task;

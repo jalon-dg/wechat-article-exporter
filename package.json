@@ -13,7 +13,7 @@
       "**/better-sqlite3/**"
     ]
   },
-  "main": "apps/electron/main.js",
+  "main": "apps/desktop/client/main.js",
   "scripts": {
     "web:debug": "yarn --cwd apps/web debug",
     "web:dev": "yarn --cwd apps/web dev",
@@ -23,6 +23,21 @@
     "miniapp:build": "yarn --cwd apps/miniapp/server build",
     "miniapp:native:dev": "yarn --cwd apps/miniapp/native dev",
     "miniapp:native:build": "yarn --cwd apps/miniapp/native build",
+    "app:dev": "concurrently -k \"yarn app:client:dev\" \"yarn app:server:dev\" \"yarn app:electron:watch\"",
+    "app:client:dev": "vite --config apps/desktop/client/vite.config.ts",
+    "app:server:dev": "node scripts/run-desktop-server.mjs",
+    "app:electron:watch": "tsc -p apps/desktop/client/tsconfig.electron.json --watch",
+    "app:build": "yarn app:server:build && yarn app:client:build",
+    "app:server:build": "yarn --cwd apps/desktop/server build",
+    "app:client:build": "yarn app:client:vite && yarn app:client:electron",
+    "app:client:vite": "vite build --config apps/desktop/client/vite.config.ts",
+    "app:client:electron": "tsc -p apps/desktop/client/tsconfig.electron.json",
+    "app:rebuild": "npx @electron/rebuild -f -w better-sqlite3",
+    "app:rebuild:native": "npm rebuild better-sqlite3 && yarn --cwd apps/desktop/server exec npm rebuild better-sqlite3",
+    "app:node-version": "echo 'Root:' && node -v && echo 'Desktop server (实际跑 30001 的 Node):' && (cd apps/desktop/server && node -v)",
+    "app:start:electron": "tsc -p apps/desktop/client/tsconfig.electron.json && npx electron apps/desktop/client --dev",
+    "app:start": "concurrently -k \"yarn app:client:dev\" \"yarn app:server:dev\" \"yarn app:start:electron\"",
+    "app:build:win": "yarn app:build && electron-builder --config apps/desktop/client/package.json",
     "dev": "yarn web:dev",
     "dev:electron": "concurrently -k \"yarn web:dev\" \"yarn electron:watch\"",
     "electron:watch": "tsc -p apps/electron/tsconfig.electron.json --watch",
@@ -72,6 +87,7 @@
     "nuxt-monaco-editor": "1.4.0",
     "nuxt-umami": "3.2.1",
     "p-queue": "^8.0.1",
+    "sql.js": "^1.11.0",
     "turndown": "^7.2.0",
     "uuid": "^11.0.3",
     "v-calendar": "^3.1.2",
@@ -82,6 +98,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
     "@electron/asar": "^3.3.1",
+    "@electron/rebuild": "^4.0.3",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/file-saver": "^2.0.7",
     "@types/turndown": "^5.0.5",
     "concurrently": "^9.1.2",
@@ -94,36 +112,5 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "yarn@1.22.22",
-  "build": {
-    "appId": "com.wechat.article.exporter",
-    "productName": "微信文章导出器",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "apps/web/.output/**/*",
-      "apps/electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
-      "artifactName": "${productName}-${version}-Setup.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false
-    },
-    "mac": {
-      "target": ["dmg"],
-      "artifactName": "${productName}-${version}.${ext}"
-    }
-  }
+  "packageManager": "yarn@1.22.22"
 }

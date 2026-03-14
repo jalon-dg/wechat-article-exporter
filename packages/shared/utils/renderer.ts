@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { getMetadataCache } from '~/store/v2/metadata';
-import type { ArticleMetadata } from '~/utils/download/types';
 import { renderComments } from '~/utils/comment';
+import type { ArticleMetadata } from '~/utils/download/types';
 
 const ITEM_SHOW_TYPE = {
   图片分享: 8,

@@ -1,0 +1,494 @@
+/* Main CSS - 微信文章导出器 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #07c160;
+    --primary-hover: #06ad56;
+    --text-color: #333;
+    --text-secondary: #666;
+    --border-color: #e5e5e5;
+    --bg-color: #f5f5f5;
+    --white: #fff;
+    --error-color: #f5222d;
+    --success-color: #52c41a;
+    --warning-color: #faad14;
+}
+
+body {
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+        "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    color: var(--text-color);
+    background: var(--bg-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+}
+
+#app {
+    width: 420px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Title Bar */
+.title-bar {
+    height: 32px;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-color);
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
+.title-bar .title {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.title-bar .controls {
+    display: flex;
+    gap: 8px;
+    -webkit-app-region: no-drag;
+}
+
+.title-bar .controls button {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.title-bar .controls button:hover {
+    background: #e5e5e5;
+}
+
+.title-bar .controls .btn-close:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Step Indicator */
+.step-indicator {
+    padding: 16px 20px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.step-indicator .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.step-indicator .step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.step-indicator .step.active {
+    color: var(--primary-color);
+}
+
+.step-indicator .step.completed {
+    color: var(--success-color);
+}
+
+.step-indicator .step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--white);
+}
+
+.step-indicator .step.active .step-num {
+    background: var(--primary-color);
+}
+
+.step-indicator .step.completed .step-num {
+    background: var(--success-color);
+}
+
+.step-indicator .step-line {
+    width: 40px;
+    height: 2px;
+    background: var(--border-color);
+}
+
+.step-indicator .step.completed + .step-line {
+    background: var(--success-color);
+}
+
+/* Step Content */
+.step-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+    background: #a0d8b4;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-full {
+    width: 100%;
+}
+
+/* Input */
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Card */
+.card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progress-bar .progress {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.3s;
+}
+
+/* Result Card */
+.result-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 8px;
+}
+
+.result-card .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.result-card .icon.success {
+    background: #e6f7ed;
+    color: var(--success-color);
+}
+
+/* Account Card */
+.account-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.account-card:hover {
+    border-color: var(--primary-color);
+}
+
+.account-card .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    background: var(--border-color);
+    object-fit: cover;
+}
+
+.account-card .info {
+    flex: 1;
+}
+
+.account-card .name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.account-card .meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Footer */
+.footer {
+    padding: 16px 20px;
+    background: var(--white);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.footer .btn {
+    flex: 1;
+}
+
+/* Radio Group */
+.radio-group {
+    display: flex;
+    gap: 12px;
+}
+
+.radio-item {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.radio-item.selected {
+    border-color: var(--primary-color);
+    background: #f0f9f0;
+}
+
+.radio-item .icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+/* Message */
+.message {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.message.error {
+    background: #fff2f0;
+    color: var(--error-color);
+    border: 1px solid #ffccc7;
+}
+
+.message.success {
+    background: #f6ffed;
+    color: var(--success-color);
+    border: 1px solid #b7eb8f;
+}
+
+/* Article Count */
+.article-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: #f0f9f0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--primary-color);
+}
+
+/* Export Format */
+.format-list {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.format-item {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.format-item.selected {
+    border-color: var(--primary-color);
+    background: #f0f9f0;
+}
+
+.format-item .format-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.format-item .format-name {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Success Result */
+.success-result {
+    text-align: center;
+    padding: 20px;
+}
+
+.success-result .icon {
+    font-size: 48px;
+    color: var(--success-color);
+    margin-bottom: 16px;
+}
+
+.success-result .title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.success-result .message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.success-result .file-info {
+    background: var(--white);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.success-result .file-info .item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.success-result .file-info .item:last-child {
+    border-bottom: none;
+}
