@@ -1,6 +1,6 @@
 // 小程序后端API地址
 // 开发环境使用 miniapp-server (默认端口3001)，生产环境使用独立服务器
-const API_BASE = 'http://127.0.0.1:3001';
+const API_BASE = 'http://192.168.1.98:3001';
 
 function request(options) {
   const { url, method = 'GET', data } = options;

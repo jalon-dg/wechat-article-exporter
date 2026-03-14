@@ -2,7 +2,7 @@ const api = require('../../api/request.js');
 
 Page({
   data: {
-    bizName: '张良计',
+    bizName: '归云见尘',
     email: 'jalongod@163.com',
     loading: false,
   },

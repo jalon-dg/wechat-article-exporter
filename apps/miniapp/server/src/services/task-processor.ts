@@ -28,7 +28,7 @@ import { proxyMpRequest } from '../utils/proxy-request';
 import { getMpCookie } from '../kv/cookie';
 
 // 从KV存储中获取已保存的微信登录信息
-async function getWechatToken(): Promise<{ token: string; cookieStr: string } | null> {
+export async function getWechatToken(): Promise<{ token: string; cookieStr: string } | null> {
   const kvKeys = ['default', 'auth-key', 'wechat-default'];
 
   for (const key of kvKeys) {
@@ -357,16 +357,19 @@ export async function processTaskQueue() {
         const order = getOrder(task.order_id);
         if (!order) {
           updateTask(task.id, { status: 'failed', error: 'Order not found' });
+          updateOrder(task.order_id, { status: 'failed', error: 'Order not found' });
           continue;
         }
 
         if (task.type === 'fetch_articles') {
           console.log(`[Fetch] Starting for order ${task.order_id}, biz: ${order.biz_name}`);
 
+          // 检查微信 token
           const wechatAuth = await getWechatToken();
           if (!wechatAuth) {
             console.error('[Fetch] No WeChat token found. Please login via web first!');
             updateTask(task.id, { status: 'failed', error: '请先在网页版扫码登录微信' });
+            updateOrder(task.order_id, { status: 'failed', error: '请先在网页版扫码登录微信' });
             continue;
           }
 
@@ -531,6 +534,7 @@ export async function processTaskQueue() {
           if (!filePath) {
             console.error(`[Email] File path is null for order ${task.order_id}`);
             updateTask(task.id, { status: 'failed', error: '文件路径不存在' });
+            updateOrder(task.order_id, { status: 'failed', error: '文件路径不存在' });
             continue;
           }
           console.log(`[Email] Reading file: ${filePath}`);
